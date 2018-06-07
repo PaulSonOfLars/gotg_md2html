@@ -1,4 +1,4 @@
-package tg_md2html// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package tg_md2html
 
 import (
 "strings"
@@ -17,6 +17,8 @@ var close = map[rune][]rune{
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
+// todo: ignore underscores in usernames; eg, @username_bot, to avoid involuntary md
+// todo: ignore underscores in links.
 func Md2html(input []rune) ([]rune) {
 	var output []rune
 	v := map[rune][]int{}
