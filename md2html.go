@@ -1,7 +1,7 @@
 package tg_md2html
 
 import (
-"strings"
+	"strings"
 )
 
 var open = map[rune][]rune{
@@ -17,9 +17,7 @@ var close = map[rune][]rune{
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-// todo: ignore underscores in usernames; eg, @username_bot, to avoid involuntary md
-// todo: ignore underscores in links.
-func Md2html(input []rune) ([]rune) {
+func Md2html(input []rune) []rune {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -62,7 +60,23 @@ func Md2html(input []rune) ([]rune) {
 				}
 			}
 			// pop currChar
-			fstPos, sndPos, rest := posArr[0], posArr[1], posArr[2:]
+			fstPos, rest := posArr[0], posArr[1:]
+			if !((fstPos == 0 || input[fstPos-1] == ' ') && !(fstPos == len(input)-1 || input[fstPos+1] == ' ')) {
+				continue
+			}
+			ok := false
+			var sndPos int
+			for _, sndPos = range rest {
+				rest = rest[1:]
+				if !(sndPos == 0 || input[sndPos-1] == ' ') && (sndPos == len(input)-1 || input[sndPos+1] == ' ') {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				continue
+			}
+
 			v[currChar] = rest
 			output = append(output, input[prev:fstPos]...)
 			output = append(output, open[currChar]...)
