@@ -19,13 +19,12 @@ func MD2HTML(input string) string {
 	return text
 }
 
-func MD2HTMLButtons(input string) (string, []string, []string){
+func MD2HTMLButtons(input string) (string, []string, []string) {
 	return md2html([]rune(input), true)
 }
 
-
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-func md2html(input []rune, buttons bool) (string, []string, []string){
+func md2html(input []rune, buttons bool) (string, []string, []string) {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -54,7 +53,13 @@ func md2html(input []rune, buttons bool) (string, []string, []string){
 		switch currChar {
 		case '_', '*', '`':
 			posArr := v[currChar]
-			if len(posArr) < 2 { // if less than two, skip
+			// if fewer than 2 chars left, pass
+			if len(posArr) < 2 {
+				continue
+			}
+			// if we're past the currChar position, pass and update
+			if posArr[0] < prev {
+				v[currChar] = posArr[1:]
 				continue
 			}
 
@@ -71,6 +76,8 @@ func md2html(input []rune, buttons bool) (string, []string, []string){
 			}
 			// pop currChar
 			fstPos, rest := posArr[0], posArr[1:]
+			v[currChar] = rest
+
 			if !((fstPos == 0 || input[fstPos-1] == ' ') && !(fstPos == len(input)-1 || input[fstPos+1] == ' ')) {
 				continue
 			}
@@ -137,13 +144,12 @@ func md2html(input []rune, buttons bool) (string, []string, []string){
 				// invalid
 				continue
 			}
-			
+
 			output = append(output, input[prev:nameOpen]...)
 			link := string(input[nextLinkOpen+1 : nextLinkClose])
 			name := string(input[nameOpen+1 : nextNameClose])
 			if buttons && strings.HasPrefix(link, "buttonurl:") {
 				// is a button
-				// todo: return correctly formatted values -> boolean to enable/disable? 2 exported funcs?
 				btnNames = append(btnNames, name)
 				btnLinks = append(btnLinks, link)
 			} else {
@@ -152,7 +158,6 @@ func md2html(input []rune, buttons bool) (string, []string, []string){
 
 			prev = nextLinkClose + 1
 		}
-
 	}
 	output = append(output, input[prev:]...)
 
