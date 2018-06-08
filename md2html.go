@@ -1,8 +1,6 @@
 package tg_md2html
 
-import (
-	"strings"
-)
+import "strings"
 
 var open = map[rune][]rune{
 	'_': []rune("<i>"),
@@ -16,8 +14,18 @@ var close = map[rune][]rune{
 	'`': []rune("</code>"),
 }
 
+func MD2HTML(input string) string {
+	text, _, _ := md2html([]rune(input), false)
+	return text
+}
+
+func MD2HTMLButtons(input string) (string, []string, []string){
+	return md2html([]rune(input), true)
+}
+
+
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-func Md2html(input []rune) []rune {
+func md2html(input []rune, buttons bool) (string, []string, []string){
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -39,6 +47,8 @@ func Md2html(input []rune) []rune {
 	}
 
 	prev := 0
+	var btnNames []string
+	var btnLinks []string
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i]
 		switch currChar {
@@ -127,13 +137,16 @@ func Md2html(input []rune) []rune {
 				// invalid
 				continue
 			}
+			
+			output = append(output, input[prev:nameOpen]...)
 			link := string(input[nextLinkOpen+1 : nextLinkClose])
 			name := string(input[nameOpen+1 : nextNameClose])
-			if strings.HasPrefix(link, "buttonurl:") {
+			if buttons && strings.HasPrefix(link, "buttonurl:") {
 				// is a button
 				// todo: return correctly formatted values -> boolean to enable/disable? 2 exported funcs?
+				btnNames = append(btnNames, name)
+				btnLinks = append(btnLinks, link)
 			} else {
-				output = append(output, input[prev:nameOpen]...)
 				output = append(output, []rune(`<a href="`+link+`">`+name+`</a>`)...)
 			}
 
@@ -143,5 +156,5 @@ func Md2html(input []rune) []rune {
 	}
 	output = append(output, input[prev:]...)
 
-	return output
+	return string(output), btnNames, btnLinks
 }
