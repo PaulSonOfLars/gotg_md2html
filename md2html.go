@@ -154,7 +154,7 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 			if buttons && strings.HasPrefix(link, "buttonurl:") {
 				// is a button
 				btnNames = append(btnNames, name)
-				btnLinks = append(btnLinks, link)
+				btnLinks = append(btnLinks, strings.TrimLeft(link, "//"))
 			} else {
 				output = append(output, []rune(`<a href="`+link+`">`+name+`</a>`)...)
 			}
