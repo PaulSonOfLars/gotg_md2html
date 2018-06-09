@@ -1,8 +1,8 @@
 package tg_md2html
 
 import (
-	"testing"
 	"github.com/magiconair/properties/assert"
+	"testing"
 )
 
 type mdTestStruct struct {
@@ -70,8 +70,14 @@ func TestMD2HTML(t *testing.T) {
 			input:  "[reallybiglink\\](example3.com) [insidelink](exampleLink.com)",
 			output: `<a href="exampleLink.com">reallybiglink](example3.com) [insidelink</a>`,
 		}, {
-			input: "[link](example.com) [escapedlink2]\\(example2.com) \\[escapedlink3](example3.com) [notalink] (no.com) [reallybiglink\\](example3.com) [insidelink](example3.com)",
+			input:  "[link](example.com) [escapedlink2]\\(example2.com) \\[escapedlink3](example3.com) [notalink] (no.com) [reallybiglink\\](example3.com) [insidelink](example3.com)",
 			output: `<a href="example.com">link</a> <a href="example3.com">escapedlink2](example2.com) [escapedlink3</a> <a href="example3.com">notalink] (no.com) [reallybiglink](example3.com) [insidelink</a>`,
+		}, {
+			input:  "hello there _friend_ how * are _ you? [link[with a sub box!]](example.com) emoji [emoji link ](example.com)",
+			output: `hello there <i>friend</i> how * are _ you? <a href="example.com">link[with a sub box!]</a> emoji <a href="example.com">emoji link </a>`,
+		}, {
+			input: "_hello_1",
+			output: "_hello_1",
 		},
 	} {
 		assert.Equal(t, MD2HTML(test.input), test.output)

@@ -1,6 +1,9 @@
 package tg_md2html
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 var open = map[rune][]rune{
 	'_': []rune("<i>"),
@@ -78,14 +81,14 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 			fstPos, rest := posArr[0], posArr[1:]
 			v[currChar] = rest
 
-			if !((fstPos == 0 || input[fstPos-1] == ' ') && !(fstPos == len(input)-1 || input[fstPos+1] == ' ')) {
+			if !((fstPos == 0 || !(unicode.IsLetter(input[fstPos-1]) || unicode.IsDigit(input[fstPos-1]))) && !(fstPos == len(input)-1 || unicode.IsSpace(input[fstPos+1]))) {
 				continue
 			}
 			ok := false
 			var sndPos int
 			for _, sndPos = range rest {
 				rest = rest[1:]
-				if !(sndPos == 0 || input[sndPos-1] == ' ') && (sndPos == len(input)-1 || input[sndPos+1] == ' ') {
+				if !(sndPos == 0 || unicode.IsSpace(input[sndPos-1])) && (sndPos == len(input)-1 || !(unicode.IsLetter(input[sndPos+1]) || unicode.IsDigit(input[sndPos+1]))) {
 					ok = true
 					break
 				}
@@ -105,7 +108,7 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 			openNameArr := v['[']
 			nameOpen, rest := openNameArr[0], openNameArr[1:]
 			v['['] = rest
-			if len(v[']']) < 1 || len(v['(']) < 1 || len(v[')']) < 1 {
+			if len(v[']']) < 1 || len(v['(']) < 1 || len(v[')']) < 1 || nameOpen < prev {
 				continue
 			}
 
