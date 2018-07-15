@@ -17,17 +17,19 @@ var close = map[rune][]rune{
 	'`': []rune("</code>"),
 }
 
+var btnPrefix = "buttonurl:"
+
 func MD2HTML(input string) string {
-	text, _, _ := md2html([]rune(input), false)
+	text, _ := md2html([]rune(input), false)
 	return text
 }
 
-func MD2HTMLButtons(input string) (string, []string, []string) {
+func MD2HTMLButtons(input string) (string, []string) {
 	return md2html([]rune(input), true)
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-func md2html(input []rune, buttons bool) (string, []string, []string) {
+func md2html(input []rune, buttons bool) (string, []string) {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -49,8 +51,7 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 	}
 
 	prev := 0
-	var btnNames []string
-	var btnLinks []string
+	var btnPairs []string
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i]
 		switch currChar {
@@ -151,10 +152,9 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 			output = append(output, input[prev:nameOpen]...)
 			link := string(input[nextLinkOpen+1 : nextLinkClose])
 			name := string(input[nameOpen+1 : nextNameClose])
-			if buttons && strings.HasPrefix(link, "buttonurl:") {
+			if buttons && strings.HasPrefix(link, btnPrefix) {
 				// is a button
-				btnNames = append(btnNames, name)
-				btnLinks = append(btnLinks, strings.TrimLeft(link, "//"))
+				btnPairs = append(btnPairs, name, strings.TrimLeft(link[len(btnPrefix):], "/"))
 			} else {
 				output = append(output, []rune(`<a href="`+link+`">`+name+`</a>`)...)
 			}
@@ -164,5 +164,5 @@ func md2html(input []rune, buttons bool) (string, []string, []string) {
 	}
 	output = append(output, input[prev:]...)
 
-	return string(output), btnNames, btnLinks
+	return string(output), btnPairs
 }
