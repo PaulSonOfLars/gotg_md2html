@@ -76,8 +76,11 @@ func TestMD2HTML(t *testing.T) {
 			input:  "hello there _friend_ how * are _ you? [link[with a sub box!]](example.com) emoji [emoji link ](example.com)",
 			output: `hello there <i>friend</i> how * are _ you? <a href="example.com">link[with a sub box!]</a> emoji <a href="example.com">emoji link </a>`,
 		}, {
-			input: "_hello_1",
+			input:  "_hello_1",
 			output: "_hello_1",
+		}, {
+			input:  `*\**`,
+			output: "<b>*</b>",
 		},
 	} {
 		assert.Equal(t, MD2HTML(test.input), test.output)

@@ -3,6 +3,7 @@ package tg_md2html
 import (
 	"strings"
 	"unicode"
+	"html"
 )
 
 var open = map[rune][]rune{
@@ -20,12 +21,12 @@ var close = map[rune][]rune{
 var btnPrefix = "buttonurl:"
 
 func MD2HTML(input string) string {
-	text, _ := md2html([]rune(input), false)
+	text, _ := md2html([]rune(html.EscapeString(input)), false)
 	return text
 }
 
 func MD2HTMLButtons(input string) (string, []string) {
-	return md2html([]rune(input), true)
+	return md2html([]rune(html.EscapeString(input)), true)
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
@@ -33,8 +34,10 @@ func md2html(input []rune, buttons bool) (string, []string) {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
-	// todo: check why removing the escape characters doesnt require changing the offset
 	escaped := false
+	offset := 0
+	lastSync := 0
+	var newInput []rune
 	for pos, char := range input {
 		if escaped {
 			escaped = false
@@ -42,13 +45,16 @@ func md2html(input []rune, buttons bool) (string, []string) {
 		}
 		switch char {
 		case '_', '*', '`', '[', ']', '(', ')':
-			v[char] = append(v[char], pos)
+			v[char] = append(v[char], pos-offset)
 			containedMDChars = append(containedMDChars, char)
 		case '\\':
 			escaped = true
-			input = append(input[:pos], input[pos+1:]...)
+			newInput = append(newInput, input[lastSync:pos]...)
+			offset ++
+			lastSync = pos + 1
 		}
 	}
+	input = append(newInput, input[lastSync:]...)
 
 	prev := 0
 	var btnPairs []string
