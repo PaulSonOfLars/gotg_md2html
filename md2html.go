@@ -18,19 +18,48 @@ var close = map[rune][]rune{
 	'`': []rune("</code>"),
 }
 
-var btnPrefix = "buttonurl:"
+const btnPrefix = "buttonurl:"
+const sameLineSuffix = ":same"
+
+type Button struct {
+	Name     string
+	Content  string
+	SameLine bool
+}
+
+type Converter struct {
+	BtnPrefix      string
+	SameLineSuffix string
+}
+
+func New() *Converter {
+	return &Converter{
+		BtnPrefix:      btnPrefix,
+		SameLineSuffix: sameLineSuffix,
+	}
+}
 
 func MD2HTML(input string) string {
-	text, _ := md2html([]rune(html.EscapeString(input)), false)
+	text, _ := md2html([]rune(html.EscapeString(input)), false, btnPrefix, sameLineSuffix)
 	return text
 }
 
-func MD2HTMLButtons(input string) (string, []string) {
-	return md2html([]rune(html.EscapeString(input)), true)
+func MD2HTMLButtons(input string) (string, []Button) {
+	return md2html([]rune(html.EscapeString(input)), true, btnPrefix, sameLineSuffix)
+}
+
+func (cv *Converter) MD2HTML(input string) string {
+	text, _ := md2html([]rune(html.EscapeString(input)), false, cv.BtnPrefix, cv.SameLineSuffix)
+	return text
+}
+
+func (cv *Converter) MD2HTMLButtons(input string) string {
+	text, _ := md2html([]rune(html.EscapeString(input)), true, cv.BtnPrefix, cv.SameLineSuffix)
+	return text
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-func md2html(input []rune, buttons bool) (string, []string) {
+func md2html(input []rune, buttons bool, btnPrefix string, sameLineSuffix string) (string, []Button) {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -57,7 +86,7 @@ func md2html(input []rune, buttons bool) (string, []string) {
 	input = append(newInput, input[lastSync:]...)
 
 	prev := 0
-	var btnPairs []string
+	var btnPairs []Button
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i]
 		switch currChar {
@@ -160,7 +189,15 @@ func md2html(input []rune, buttons bool) (string, []string) {
 			name := string(input[nameOpen+1 : nextNameClose])
 			if buttons && strings.HasPrefix(link, btnPrefix) {
 				// is a button
-				btnPairs = append(btnPairs, name, strings.TrimLeft(link[len(btnPrefix):], "/"))
+				sameline := strings.HasSuffix(link, sameLineSuffix)
+				if sameline {
+					link = link[:len(link)-len(sameLineSuffix)]
+				}
+				btnPairs = append(btnPairs, Button{
+					Name:     name,
+					Content:  strings.TrimLeft(link[len(btnPrefix):], "/"),
+					SameLine: sameline,
+				})
 			} else {
 				output = append(output, []rune(`<a href="`+link+`">`+name+`</a>`)...)
 			}
