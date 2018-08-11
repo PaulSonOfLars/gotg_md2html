@@ -1,16 +1,15 @@
 package tg_md2html
 
 import (
-	"github.com/magiconair/properties/assert"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type mdTestStruct struct {
-	input  string
-	output string
-}
-
 func TestMD2HTML(t *testing.T) {
+	type mdTestStruct struct {
+		input  string
+		output string
+	}
 	for _, test := range []mdTestStruct{
 		{
 			input:  "hello there",
@@ -81,8 +80,43 @@ func TestMD2HTML(t *testing.T) {
 		}, {
 			input:  `*\**`,
 			output: "<b>*</b>",
+		}, {
+			input:  "hell_o [there[]](link.com/this_isfine)",
+			output: `hell_o <a href="link.com/this_isfine">there[]</a>`,
 		},
 	} {
-		assert.Equal(t, MD2HTML(test.input), test.output)
+		assert.Equal(t, test.output, MD2HTML(test.input))
+	}
+}
+
+func TestMD2HTMLButtons(t *testing.T) {
+	type mdTestStruct struct {
+		input  string
+		output string
+		btns   []Button
+	}
+
+	for _, test := range []mdTestStruct{
+		{
+			input:  "hello [there](buttonurl://link.com)",
+			output: `hello `,
+			btns: []Button{{
+				Name:     "there",
+				Content:  "link.com",
+				SameLine: false,
+			}},
+		}, {
+			input:  "hey there! My name is @MissRose_bot. go to [Rules](buttonurl://t.me/MissRose_bot?start=idek_12345)",
+			output: "hey there! My name is @MissRose_bot. go to ",
+			btns: []Button{{
+				Name:     "Rules",
+				Content:  "t.me/MissRose_bot?start=idek_12345",
+				SameLine: false,
+			}},
+		},
+	} {
+		out, btns := MD2HTMLButtons(test.input)
+		assert.Equal(t, test.output, out)
+		assert.ElementsMatch(t, test.btns, btns)
 	}
 }

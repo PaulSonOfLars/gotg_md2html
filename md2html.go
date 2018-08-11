@@ -53,9 +53,8 @@ func (cv *Converter) MD2HTML(input string) string {
 	return text
 }
 
-func (cv *Converter) MD2HTMLButtons(input string) string {
-	text, _ := md2html([]rune(html.EscapeString(input)), true, cv.BtnPrefix, cv.SameLineSuffix)
-	return text
+func (cv *Converter) MD2HTMLButtons(input string) (string, []Button) {
+	return md2html([]rune(html.EscapeString(input)), true, cv.BtnPrefix, cv.SameLineSuffix)
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
@@ -102,15 +101,13 @@ func md2html(input []rune, buttons bool, btnPrefix string, sameLineSuffix string
 				continue
 			}
 
+			cnt := i // copy i to avoid changing if false
 			// skip i to next same char (hence jumping all inbetween) (could be done with a normal range and continues?)
 			// todo: OOB check on +1?
-			for _, val := range containedMDChars[i+1:] {
-				i++
+			for _, val := range containedMDChars[cnt+1:] {
+				cnt++
 				if val == currChar {
 					break
-				}
-				if len(v[val]) > 1 {
-					v[val] = v[val][1:] // pop from map when skipped
 				}
 			}
 			// pop currChar
@@ -139,6 +136,7 @@ func md2html(input []rune, buttons bool, btnPrefix string, sameLineSuffix string
 			output = append(output, input[fstPos+1:sndPos]...)
 			output = append(output, close[currChar]...)
 			prev = sndPos + 1
+			i = cnt // set i to copy
 
 		case '[':
 			openNameArr := v['[']
