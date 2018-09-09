@@ -64,7 +64,7 @@ func (cv *Converter) MD2HTMLButtons(input string) (string, []Button) {
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
-	var output []rune
+	var output strings.Builder
 	v := map[rune][]int{}
 	var containedMDChars []rune
 	escaped := false
@@ -136,10 +136,10 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			}
 
 			v[currChar] = rest
-			output = append(output, input[prev:fstPos]...)
-			output = append(output, open[currChar]...)
-			output = append(output, input[fstPos+1:sndPos]...)
-			output = append(output, close[currChar]...)
+			output.WriteString(string(input[prev:fstPos]))
+			output.WriteString(string(open[currChar]))
+			output.WriteString(string(input[fstPos+1:sndPos]))
+			output.WriteString(string(close[currChar]))
 			prev = sndPos + 1
 			i = cnt // set i to copy
 
@@ -187,7 +187,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				continue
 			}
 
-			output = append(output, input[prev:nameOpen]...)
+			output.WriteString(string(input[prev:nameOpen]))
 			link := string(input[nextLinkOpen+1 : nextLinkClose])
 			name := string(input[nameOpen+1 : nextNameClose])
 			if buttons && strings.HasPrefix(link, cv.BtnPrefix) {
@@ -202,13 +202,13 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 					SameLine: sameline,
 				})
 			} else {
-				output = append(output, []rune(`<a href="`+link+`">`+name+`</a>`)...)
+				output.WriteString(`<a href="`+link+`">`+name+`</a>`)
 			}
 
 			prev = nextLinkClose + 1
 		}
 	}
-	output = append(output, input[prev:]...)
+	output.WriteString(string(input[prev:]))
 
-	return string(output), btnPairs
+	return output.String(), btnPairs
 }
