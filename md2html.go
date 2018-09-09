@@ -21,6 +21,11 @@ var close = map[rune][]rune{
 const btnPrefix = "buttonurl:"
 const sameLineSuffix = ":same"
 
+var defaultConverter = Converter{
+	BtnPrefix:      btnPrefix,
+	SameLineSuffix: sameLineSuffix,
+}
+
 type Button struct {
 	Name     string
 	Content  string
@@ -40,25 +45,25 @@ func New() *Converter {
 }
 
 func MD2HTML(input string) string {
-	text, _ := md2html([]rune(html.EscapeString(input)), false, btnPrefix, sameLineSuffix)
+	text, _ := defaultConverter.md2html([]rune(html.EscapeString(input)), false)
 	return text
 }
 
 func MD2HTMLButtons(input string) (string, []Button) {
-	return md2html([]rune(html.EscapeString(input)), true, btnPrefix, sameLineSuffix)
+	return defaultConverter.md2html([]rune(html.EscapeString(input)), true)
 }
 
 func (cv *Converter) MD2HTML(input string) string {
-	text, _ := md2html([]rune(html.EscapeString(input)), false, cv.BtnPrefix, cv.SameLineSuffix)
+	text, _ := cv.md2html([]rune(html.EscapeString(input)), false)
 	return text
 }
 
 func (cv *Converter) MD2HTMLButtons(input string) (string, []Button) {
-	return md2html([]rune(html.EscapeString(input)), true, cv.BtnPrefix, cv.SameLineSuffix)
+	return cv.md2html([]rune(html.EscapeString(input)), true)
 }
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
-func md2html(input []rune, buttons bool, btnPrefix string, sameLineSuffix string) (string, []Button) {
+func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var output []rune
 	v := map[rune][]int{}
 	var containedMDChars []rune
@@ -185,15 +190,15 @@ func md2html(input []rune, buttons bool, btnPrefix string, sameLineSuffix string
 			output = append(output, input[prev:nameOpen]...)
 			link := string(input[nextLinkOpen+1 : nextLinkClose])
 			name := string(input[nameOpen+1 : nextNameClose])
-			if buttons && strings.HasPrefix(link, btnPrefix) {
+			if buttons && strings.HasPrefix(link, cv.BtnPrefix) {
 				// is a button
-				sameline := strings.HasSuffix(link, sameLineSuffix)
+				sameline := strings.HasSuffix(link, cv.SameLineSuffix)
 				if sameline {
-					link = link[:len(link)-len(sameLineSuffix)]
+					link = link[:len(link)-len(cv.SameLineSuffix)]
 				}
 				btnPairs = append(btnPairs, Button{
 					Name:     name,
-					Content:  strings.TrimLeft(link[len(btnPrefix):], "/"),
+					Content:  strings.TrimLeft(link[len(cv.BtnPrefix):], "/"),
 					SameLine: sameline,
 				})
 			} else {
