@@ -1,8 +1,8 @@
 package tg_md2html
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestMD2HTML(t *testing.T) {
@@ -111,6 +111,46 @@ func TestMD2HTMLButtons(t *testing.T) {
 			btns: []Button{{
 				Name:     "Rules",
 				Content:  "t.me/MissRose_bot?start=idek_12345",
+				SameLine: false,
+			}},
+		}, {
+			input:  "no [1](buttonurl://link.com)[2](buttonurl://link.com)[3](buttonurl://link.com)",
+			output: `no `,
+			btns: []Button{{
+				Name:     "1",
+				Content:  "link.com",
+				SameLine: false,
+			}, {
+				Name:     "2",
+				Content:  "link.com",
+				SameLine: false,
+			}, {
+				Name:     "3",
+				Content:  "link.com",
+				SameLine: false,
+			}},
+		}, {
+			input:  "*bold [box]* [1](buttonurl://link.com)[2](buttonurl://link.com)[3](buttonurl://link.com)",
+			output: `<b>bold [box]</b> `,
+			btns: []Button{{
+				Name:     "1",
+				Content:  "link.com",
+				SameLine: false,
+			}, {
+				Name:     "2",
+				Content:  "link.com",
+				SameLine: false,
+			}, {
+				Name:     "3",
+				Content:  "link.com",
+				SameLine: false,
+			}},
+		}, {
+			input:  "*a [box]*[link](buttonurl://link.com)",
+			output: "<b>a [box]</b>",
+			btns:   []Button{{
+				Name:     "link",
+				Content:  "link.com",
 				SameLine: false,
 			}},
 		},

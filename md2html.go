@@ -1,9 +1,9 @@
 package tg_md2html
 
 import (
+	"html"
 	"strings"
 	"unicode"
-	"html"
 )
 
 var open = map[rune][]rune{
@@ -93,19 +93,20 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var btnPairs []Button
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i]
+		posArr := v[currChar]
+		// if we're past the currChar position, pass and update
+		if posArr[0] < prev {
+			v[currChar] = posArr[1:]
+			continue
+		}
 		switch currChar {
 		case '_', '*', '`':
-			posArr := v[currChar]
 			// if fewer than 2 chars left, pass
 			if len(posArr) < 2 {
 				continue
 			}
-			// if we're past the currChar position, pass and update
-			if posArr[0] < prev {
-				v[currChar] = posArr[1:]
-				continue
-			}
 
+			bkp := map[rune][]int{}
 			cnt := i // copy i to avoid changing if false
 			// skip i to next same char (hence jumping all inbetween) (could be done with a normal range and continues?)
 			// todo: OOB check on +1?
@@ -113,6 +114,12 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				cnt++
 				if val == currChar {
 					break
+				}
+
+				if x, ok := bkp[val]; ok {
+					bkp[val] = x[1:]
+				} else {
+					bkp[val] = v[val][1:]
 				}
 			}
 			// pop currChar
@@ -138,14 +145,16 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			v[currChar] = rest
 			output.WriteString(string(input[prev:fstPos]))
 			output.WriteString(string(open[currChar]))
-			output.WriteString(string(input[fstPos+1:sndPos]))
+			output.WriteString(string(input[fstPos+1 : sndPos]))
 			output.WriteString(string(close[currChar]))
 			prev = sndPos + 1
 			i = cnt // set i to copy
+			for x, y := range bkp {
+				v[x] = y
+			}
 
 		case '[':
-			openNameArr := v['[']
-			nameOpen, rest := openNameArr[0], openNameArr[1:]
+			nameOpen, rest := posArr[0], posArr[1:]
 			v['['] = rest
 			if len(v[']']) < 1 || len(v['(']) < 1 || len(v[')']) < 1 || nameOpen < prev {
 				continue
@@ -202,7 +211,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 					SameLine: sameline,
 				})
 			} else {
-				output.WriteString(`<a href="`+link+`">`+name+`</a>`)
+				output.WriteString(`<a href="` + link + `">` + name + `</a>`)
 			}
 
 			prev = nextLinkClose + 1
