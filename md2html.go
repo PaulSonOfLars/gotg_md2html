@@ -197,7 +197,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 					link = link[:len(link)-len(cv.SameLineSuffix)]
 				}
 				btnPairs = append(btnPairs, Button{
-					Name:     name,
+					Name:     html.UnescapeString(name),
 					Content:  strings.TrimLeft(link[len(cv.BtnPrefix):], "/"),
 					SameLine: sameline,
 				})
