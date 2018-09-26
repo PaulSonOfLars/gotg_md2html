@@ -2,17 +2,18 @@ package tg_md2html
 
 import (
 	"html"
+	"regexp"
 	"strings"
 	"unicode"
 )
 
-var open = map[rune][]rune{
+var openHTML = map[rune][]rune{
 	'_': []rune("<i>"),
 	'*': []rune("<b>"),
 	'`': []rune("<code>"),
 }
 
-var close = map[rune][]rune{
+var closeHTML = map[rune][]rune{
 	'_': []rune("</i>"),
 	'*': []rune("</b>"),
 	'`': []rune("</code>"),
@@ -126,14 +127,14 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			fstPos, rest := posArr[0], posArr[1:]
 			v[currChar] = rest
 
-			if !((fstPos == 0 || !(unicode.IsLetter(input[fstPos-1]) || unicode.IsDigit(input[fstPos-1]))) && !(fstPos == len(input)-1 || unicode.IsSpace(input[fstPos+1]))) {
+			if !validStart(fstPos, input) {
 				continue
 			}
 			ok := false
 			var sndPos int
 			for _, sndPos = range rest {
 				rest = rest[1:]
-				if !(sndPos == 0 || unicode.IsSpace(input[sndPos-1])) && (sndPos == len(input)-1 || !(unicode.IsLetter(input[sndPos+1]) || unicode.IsDigit(input[sndPos+1]))) {
+				if validEnd(sndPos, input) {
 					ok = true
 					break
 				}
@@ -144,9 +145,9 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 
 			v[currChar] = rest
 			output.WriteString(string(input[prev:fstPos]))
-			output.WriteString(string(open[currChar]))
+			output.WriteString(string(openHTML[currChar]))
 			output.WriteString(string(input[fstPos+1 : sndPos]))
-			output.WriteString(string(close[currChar]))
+			output.WriteString(string(closeHTML[currChar]))
 			prev = sndPos + 1
 			i = cnt // set i to copy
 			for x, y := range bkp {
@@ -220,4 +221,120 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	output.WriteString(string(input[prev:]))
 
 	return output.String(), btnPairs
+}
+
+func validStart(pos int, input []rune) bool {
+	return (pos == 0 || !(unicode.IsLetter(input[pos-1]) || unicode.IsDigit(input[pos-1]))) && !(pos == len(input)-1 || unicode.IsSpace(input[pos+1]))
+}
+
+func validEnd(pos int, input []rune) bool {
+	return !(pos == 0 || unicode.IsSpace(input[pos-1])) && (pos == len(input)-1 || !(unicode.IsLetter(input[pos+1]) || unicode.IsDigit(input[pos+1])))
+}
+
+func Reverse(s string, buttons []Button) string {
+	return defaultConverter.Reverse(s, buttons)
+}
+
+func (cv *Converter) Reverse(s string, buttons []Button) string {
+	return cv.reverse([]rune(s), buttons)
+}
+
+var link = regexp.MustCompile(`a href="(.*)"`)
+
+// TODO: this needs to return string, error to handle bad parsing
+func (cv *Converter) reverse(r []rune, buttons []Button) string {
+	prev := 0
+	out := strings.Builder{}
+	for i := 0; i < len(r); i++ {
+		if r[i] == '<' {
+			closeTag := 0
+			for ix, c := range r[i+1:] {
+				if c == '>' {
+					closeTag = i + ix + 1
+					break
+				}
+			}
+			if closeTag == 0 {
+				// "no close tag"
+				return ""
+			}
+
+			closingOpen := 0
+			for ix, c := range r[closeTag:] {
+				if c == '<' {
+					closingOpen = closeTag + ix
+					break
+				}
+			}
+			if closingOpen == 0 {
+				// "no closing open"
+				return ""
+			}
+
+			closingClose := 0
+			for ix, c := range r[closingOpen:] {
+				if c == '>' {
+					closingClose = closingOpen + ix
+					break
+				}
+			}
+			if closingClose == 0 {
+				// "no closing close"
+				return ""
+			}
+
+			tag := string(r[i+1 : closeTag])
+			// todo: check expected closing tag
+			out.WriteString(string(r[prev:i]))
+			if link.MatchString(tag) {
+				matches := link.FindStringSubmatch(tag)
+				out.WriteString("[" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'[', ']', '(', ')'}) + "](" + matches[1] + ")")
+			} else if tag == "b" {
+				out.WriteString("*" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'*'}) + "*")
+			} else if tag == "i" {
+				out.WriteString("_" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'_'}) + "_")
+			} else if tag == "code" {
+				out.WriteString("`" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'`'}) + "`")
+			} else {
+				// unknown tag
+				return ""
+			}
+			prev = closingClose + 1
+			i = closingClose
+		}
+	}
+	out.WriteString(string(r[prev:]))
+
+	for _, btn := range buttons {
+		out.WriteString("\n[" + btn.Name + "](buttonurl://" + btn.Content)
+		if btn.SameLine {
+			out.WriteString(":same")
+		}
+		out.WriteString(")")
+	}
+
+	return out.String()
+}
+
+func EscapeMarkdown(r []rune, toEscape []rune) string {
+	out := strings.Builder{}
+	for i, x := range r {
+		if contains(x, toEscape) {
+			if i == 0 || i == len(r)-1 || validEnd(i, r) || validStart(i, r) {
+				out.WriteRune('\\')
+			}
+		}
+		out.WriteRune(x)
+	}
+	return out.String()
+}
+
+func contains(r rune, rr []rune) bool {
+	for _, x := range rr {
+		if r == x {
+			return true
+		}
+	}
+
+	return false
 }

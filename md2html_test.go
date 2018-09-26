@@ -148,7 +148,7 @@ func TestMD2HTMLButtons(t *testing.T) {
 		}, {
 			input:  "*a [box]*[link](buttonurl://link.com)",
 			output: "<b>a [box]</b>",
-			btns:   []Button{{
+			btns: []Button{{
 				Name:     "link",
 				Content:  "link.com",
 				SameLine: false,
@@ -158,5 +158,36 @@ func TestMD2HTMLButtons(t *testing.T) {
 		out, btns := MD2HTMLButtons(test.input)
 		assert.Equal(t, test.output, out)
 		assert.ElementsMatch(t, test.btns, btns)
+	}
+}
+
+func TestReverse(t *testing.T) {
+	for _, test := range []string{
+		"hello there",
+		"_hello_ there",
+		"hello _there_",
+		"_hello there_",
+		"_hello_ there_",
+		"_hello _there_",
+		"_hello _ there_",
+		"so_hello _there_",
+		"_hello you_there_",
+		"`hello` there",
+		"*hello* there",
+		"hello [there](link.com)",
+		"hello [there](buttonurl://link.com)",
+		"hello [there[]](link.com)",
+		"[hello] soo] () [there](link.com)",
+		"_hello_ `there` *bold* [url](link.com) _`notcode`_ *_notitalic_* [weird not italic _](morelink.co.uk)_",
+		"[hello] soo] () [there](link.com)",
+		"]]]]]]] )))))))  ((((([link](example.com) [link2](example2.com) [link3](example3.com) ]]]]](((())))",
+		"[reallybiglink\\](example3.com) [insidelink](exampleLink.com)",
+		"[link](example.com) [escapedlink2]\\(example2.com) \\[escapedlink3](example3.com) [notalink] (no.com) [reallybiglink\\](example3.com) [insidelink](example3.com)",
+		"hello there _friend_ how * are _ you? [link[with a sub box!]](example.com) emoji [emoji link ](example.com)",
+		"_hello_1",
+		`*\**`,
+		"hell_o [there[]](link.com/this_isfine)",
+	} {
+		assert.Equal(t, MD2HTML(test), MD2HTML(Reverse(MD2HTML(test), nil)))
 	}
 }
