@@ -95,6 +95,9 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i]
 		posArr := v[currChar]
+		if len(posArr) <= 0 {
+			continue
+		}
 		// if we're past the currChar position, pass and update
 		if posArr[0] < prev {
 			v[currChar] = posArr[1:]
