@@ -99,7 +99,7 @@ func TestMD2HTMLButtons(t *testing.T) {
 	for _, test := range []mdTestStruct{
 		{
 			input:  "hello [there](buttonurl://link.com)",
-			output: `hello `,
+			output: `hello`,
 			btns: []Button{{
 				Name:     "there",
 				Content:  "link.com",
@@ -107,7 +107,7 @@ func TestMD2HTMLButtons(t *testing.T) {
 			}},
 		}, {
 			input:  "hey there! My name is @MissRose_bot. go to [Rules](buttonurl://t.me/MissRose_bot?start=idek_12345)",
-			output: "hey there! My name is @MissRose_bot. go to ",
+			output: "hey there! My name is @MissRose_bot. go to",
 			btns: []Button{{
 				Name:     "Rules",
 				Content:  "t.me/MissRose_bot?start=idek_12345",
@@ -115,7 +115,7 @@ func TestMD2HTMLButtons(t *testing.T) {
 			}},
 		}, {
 			input:  "no [1](buttonurl://link.com)[2](buttonurl://link.com)[3](buttonurl://link.com)",
-			output: `no `,
+			output: `no`,
 			btns: []Button{{
 				Name:     "1",
 				Content:  "link.com",
@@ -131,7 +131,7 @@ func TestMD2HTMLButtons(t *testing.T) {
 			}},
 		}, {
 			input:  "*bold [box]* [1](buttonurl://link.com)[2](buttonurl://link.com)[3](buttonurl://link.com)",
-			output: `<b>bold [box]</b> `,
+			output: `<b>bold [box]</b>`,
 			btns: []Button{{
 				Name:     "1",
 				Content:  "link.com",
@@ -187,7 +187,73 @@ func TestReverse(t *testing.T) {
 		"_hello_1",
 		`*\**`,
 		"hell_o [there[]](link.com/this_isfine)",
+		"hello \\[there](link.com)",
+		"hello \\[there\\]\\(link.com\\)",
+		"hello \\[there]\\(link.com)",
+		"hello [there more \\[text](link.com)",
+		"hello \\(link.com)",
+		"hello \\\\(who knowsss\\)",
+		"hello \\[ text",
 	} {
 		assert.Equal(t, MD2HTML(test), MD2HTML(Reverse(MD2HTML(test), nil)))
+	}
+}
+
+func TestReverseBtns(t *testing.T) {
+	type TestRevBtn struct {
+		text    string
+		buttons []Button
+		out     string
+	}
+
+	for _, test := range []TestRevBtn{
+		{
+			text:    "Hello there",
+			buttons: []Button{},
+			out:     "Hello there",
+		}, {
+			text:    "Hello there <i>italic</i>",
+			buttons: []Button{},
+			out:     "Hello there _italic_",
+		}, {
+			text: "Hello there",
+			buttons: []Button{
+				{
+					Name:     "Test",
+					Content:  "link.com",
+					SameLine: false,
+				},
+			},
+			out: "Hello there\n[Test](buttonurl://link.com)",
+		}, {
+			text: "oh no",
+			buttons: []Button{
+				{
+					Name:     "btn1",
+					Content:  "example.com",
+					SameLine: false,
+				}, {
+					Name:     "btn2",
+					Content:  "link.com",
+					SameLine: true,
+				},
+			},
+			out: "oh no\n[btn1](buttonurl://example.com)\n[btn2](buttonurl://link.com:same)",
+		}, {
+			text:    "I dont even knowww \\[ stuff",
+			buttons: nil,
+			out:     "I dont even knowww \\\\[ stuff",
+		}, {
+			text:    "I dont even knowww \\\\[ stuff",
+			buttons: nil,
+			out:     "I dont even knowww \\\\\\\\[ stuff",
+		},
+	} {
+		assert.Equal(t, test.out, Reverse(test.text, test.buttons))
+
+		one, oneb := MD2HTMLButtons(test.out)
+		two, twob := MD2HTMLButtons(Reverse(one, oneb))
+		assert.Equal(t, one, two)
+		assert.ElementsMatch(t, oneb, twob)
 	}
 }

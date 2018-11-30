@@ -223,7 +223,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	}
 	output.WriteString(string(input[prev:]))
 
-	return output.String(), btnPairs
+	return strings.TrimSpace(output.String()), btnPairs
 }
 
 func validStart(pos int, input []rune) bool {
@@ -249,7 +249,8 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 	prev := 0
 	out := strings.Builder{}
 	for i := 0; i < len(r); i++ {
-		if r[i] == '<' {
+		switch r[i] {
+		case '<':
 			closeTag := 0
 			for ix, c := range r[i+1:] {
 				if c == '>' {
@@ -304,6 +305,16 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			}
 			prev = closingClose + 1
 			i = closingClose
+		case '[', ']', '(', ')':
+			out.WriteString(string(r[prev:i]))
+			out.WriteRune('\\')
+			out.WriteRune(r[i])
+			prev = i + 1
+		case '\\':
+			out.WriteString(string(r[prev:i+1])) // + 1 to include curr
+			out.WriteRune(r[i])
+			i++
+			prev = i
 		}
 	}
 	out.WriteString(string(r[prev:]))
