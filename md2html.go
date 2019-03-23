@@ -211,7 +211,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				}
 				btnPairs = append(btnPairs, Button{
 					Name:     html.UnescapeString(name),
-					Content:  strings.TrimLeft(link[len(cv.BtnPrefix):], "/"),
+					Content:  strings.TrimLeft(strings.TrimSpace(link[len(cv.BtnPrefix):]), "/"),
 					SameLine: sameline,
 				})
 			} else {
@@ -311,7 +311,7 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			out.WriteRune(r[i])
 			prev = i + 1
 		case '\\':
-			out.WriteString(string(r[prev:i+1])) // + 1 to include curr
+			out.WriteString(string(r[prev : i+1])) // + 1 to include curr
 			out.WriteRune(r[i])
 			i++
 			prev = i
@@ -320,7 +320,7 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 	out.WriteString(string(r[prev:]))
 
 	for _, btn := range buttons {
-		out.WriteString("\n[" + btn.Name + "](buttonurl://" + btn.Content)
+		out.WriteString("\n[" + html.EscapeString(btn.Name) + "](buttonurl://" + html.EscapeString(btn.Content))
 		if btn.SameLine {
 			out.WriteString(":same")
 		}
