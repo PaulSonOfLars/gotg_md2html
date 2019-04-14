@@ -289,16 +289,16 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 
 			tag := string(r[i+1 : closeTag])
 			// todo: check expected closing tag
-			out.WriteString(string(r[prev:i]))
+			out.WriteString(html.UnescapeString(string(r[prev:i])))
 			if link.MatchString(tag) {
 				matches := link.FindStringSubmatch(tag)
-				out.WriteString("[" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'[', ']', '(', ')'}) + "](" + matches[1] + ")")
+				out.WriteString("[" + html.UnescapeString(EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'[', ']', '(', ')'})) + "](" + matches[1] + ")")
 			} else if tag == "b" {
-				out.WriteString("*" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'*'}) + "*")
+				out.WriteString("*" + html.UnescapeString(EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'*'})) + "*")
 			} else if tag == "i" {
-				out.WriteString("_" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'_'}) + "_")
+				out.WriteString("_" + html.UnescapeString(EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'_'})) + "_")
 			} else if tag == "code" {
-				out.WriteString("`" + EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'`'}) + "`")
+				out.WriteString("`" + html.UnescapeString(EscapeMarkdown(r[closeTag+1:closingOpen], []rune{'`'})) + "`")
 			} else {
 				// unknown tag
 				return ""
@@ -306,21 +306,21 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			prev = closingClose + 1
 			i = closingClose
 		case '[', ']', '(', ')':
-			out.WriteString(string(r[prev:i]))
+			out.WriteString(html.UnescapeString(string(r[prev:i])))
 			out.WriteRune('\\')
 			out.WriteRune(r[i])
 			prev = i + 1
 		case '\\':
-			out.WriteString(string(r[prev : i+1])) // + 1 to include curr
+			out.WriteString(html.UnescapeString(string(r[prev : i+1]))) // + 1 to include curr
 			out.WriteRune(r[i])
 			i++
 			prev = i
 		}
 	}
-	out.WriteString(string(r[prev:]))
+	out.WriteString(html.UnescapeString(string(r[prev:])))
 
 	for _, btn := range buttons {
-		out.WriteString("\n[" + html.EscapeString(btn.Name) + "](buttonurl://" + html.EscapeString(btn.Content))
+		out.WriteString("\n[" + btn.Name + "](buttonurl://" + html.UnescapeString(btn.Content))
 		if btn.SameLine {
 			out.WriteString(":same")
 		}

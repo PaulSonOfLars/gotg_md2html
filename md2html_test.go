@@ -194,6 +194,15 @@ func TestReverse(t *testing.T) {
 		"hello \\(link.com)",
 		"hello \\\\(who knowsss\\)",
 		"hello \\[ text",
+		"don't know",
+		"don't \\[ text",
+		"don't hey_o_there whastup \"",
+		"don't hey_o_there [link](idek.com)",
+		"don't hey_o_there [link](buttonurl://idek.com)",
+		"don't hey_o_there \\[link](buttonurl://idek.com)",
+		"don't hey_o_there \\[link](buttonurl://idek.com) [nolink]",
+		"don't hey_o_there \\[link](buttonurl://idek.com) [stillink](buttonurl://test.com)",
+		"don't _hey'quotes_",
 	} {
 		assert.Equal(t, MD2HTML(test), MD2HTML(Reverse(MD2HTML(test), nil)))
 	}
@@ -247,6 +256,36 @@ func TestReverseBtns(t *testing.T) {
 			text:    "I dont even knowww \\\\[ stuff",
 			buttons: nil,
 			out:     "I dont even knowww \\\\\\\\[ stuff",
+		}, {
+			text: "Hello there",
+			buttons: []Button{
+				{
+					Name:     "test with ' quote",
+					Content:  "link.com",
+					SameLine: false,
+				},
+			},
+			out: "Hello there\n[test with ' quote](buttonurl://link.com)",
+		}, {
+			text: "Hello there",
+			buttons: []Button{
+				{
+					Name:     "test with ' quote",
+					Content:  "link.com%22%22%22",
+					SameLine: false,
+				},
+			},
+			out: "Hello there\n[test with ' quote](buttonurl://link.com%22%22%22)",
+		}, {
+			text: "Hello there",
+			buttons: []Button{
+				{
+					Name:     "test with ' quote",
+					Content:  "link.com\"\"",
+					SameLine: false,
+				},
+			},
+			out: "Hello there\n[test with ' quote](buttonurl://link.com\"\")",
 		},
 	} {
 		assert.Equal(t, test.out, Reverse(test.text, test.buttons))
