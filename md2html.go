@@ -146,7 +146,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				continue
 			}
 
-			v[currChar] = rest
+			bkp[currChar] = rest
 			output.WriteString(string(input[prev:fstPos]))
 			output.WriteString(string(openHTML[currChar]))
 			output.WriteString(string(input[fstPos+1 : sndPos]))
