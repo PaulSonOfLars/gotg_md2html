@@ -1,8 +1,10 @@
 package tg_md2html
 
 import (
-	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMD2HTML(t *testing.T) {
@@ -83,6 +85,9 @@ func TestMD2HTML(t *testing.T) {
 		}, {
 			input:  "hell_o [there[]](link.com/this_isfine)",
 			output: `hell_o <a href="link.com/this_isfine">there[]</a>`,
+		}, {
+			input:  "\\",
+			output: "\\",
 		},
 	} {
 		assert.Equal(t, test.output, MD2HTML(test.input))
@@ -296,3 +301,55 @@ func TestReverseBtns(t *testing.T) {
 		assert.ElementsMatch(t, oneb, twob)
 	}
 }
+
+func TestIsEscaped(t *testing.T) {
+	for _, x := range []struct {
+		s string
+		b bool
+	}{
+		{
+			s: "a",
+			b: false,
+		}, {
+			s: `\a`,
+			b: true,
+		}, {
+			s: `\\a`,
+			b: false,
+		}, {
+			s: `\\\a`,
+			b: true,
+		}, {
+			s: `Hey there a`,
+			b: false,
+		}, {
+			s: `Hey there \a`,
+			b: true,
+		}, {
+			s: `Hey there \\a`,
+			b: false,
+		},
+	} {
+		assert.Equal(t, x.b, IsEscaped([]rune(x.s), len([]rune(x.s[:strings.IndexRune(x.s, 'a')]))))
+	}
+}
+
+var v string
+var bs []Button
+
+func BenchmarkMD2HTML(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		v, bs = MD2HTMLButtons(message)
+	}
+}
+
+var message = `
+This is text.
+There is *bold*
+There is _italic_
+There is a [url](example.com)
+There is a button [button](buttonurl://example.com)
+There is some more *bold*
+And some _italic_
+Good test?
+`

@@ -19,6 +19,8 @@ var closeHTML = map[rune][]rune{
 	'`': []rune("</code>"),
 }
 
+var allMdChars = []rune{'_', '*', '`', '[', ']', '(', ')', '\\'}
+
 const btnPrefix = "buttonurl:"
 const sameLineSuffix = ":same"
 
@@ -63,6 +65,22 @@ func (cv *Converter) MD2HTMLButtons(input string) (string, []Button) {
 	return cv.md2html([]rune(html.EscapeString(input)), true)
 }
 
+func IsEscaped(input []rune, pos int) bool {
+	if pos == 0 {
+		return false
+	}
+
+	i := pos - 1
+	for ; i >= 0; i-- {
+		if input[i] == '\\' {
+			continue
+		}
+		break
+	}
+
+	return (pos-i)%2 == 0
+}
+
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var output strings.Builder
@@ -72,6 +90,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	offset := 0
 	lastSync := 0
 	var newInput []rune
+
 	for pos, char := range input {
 		if escaped {
 			escaped = false
@@ -82,12 +101,16 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			v[char] = append(v[char], pos-offset)
 			containedMDChars = append(containedMDChars, char)
 		case '\\':
+			if len(input) <= pos+1 || !contains(input[pos+1], allMdChars) {
+				continue
+			}
 			escaped = true
 			newInput = append(newInput, input[lastSync:pos]...)
-			offset ++
+			offset++
 			lastSync = pos + 1
 		}
 	}
+
 	input = append(newInput, input[lastSync:]...)
 
 	prev := 0
