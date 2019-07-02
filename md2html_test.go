@@ -88,6 +88,12 @@ func TestMD2HTML(t *testing.T) {
 		}, {
 			input:  "\\",
 			output: "\\",
+		}, {
+			input:  "_| _ '_ ` _ _`",
+			output: "<i>| _ &#39;</i> ` _ _`",
+		}, {
+			input:  "_| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _`",
+			output: "<i>| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ _`",
 		},
 	} {
 		assert.Equal(t, test.output, MD2HTML(test.input))
@@ -208,6 +214,7 @@ func TestReverse(t *testing.T) {
 		"don't hey_o_there \\[link](buttonurl://idek.com) [nolink]",
 		"don't hey_o_there \\[link](buttonurl://idek.com) [stillink](buttonurl://test.com)",
 		"don't _hey'quotes_",
+		"`test \\`escaped` backticks",
 	} {
 		assert.Equal(t, MD2HTML(test), MD2HTML(Reverse(MD2HTML(test), nil)))
 	}

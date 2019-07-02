@@ -1,6 +1,7 @@
 package tg_md2html
 
 import (
+	"fmt"
 	"html"
 	"regexp"
 	"strings"
@@ -81,6 +82,8 @@ func IsEscaped(input []rune, pos int) bool {
 	return (pos-i)%2 == 0
 }
 
+// todo: find a way to mark tg entities as a source of truth, even if invalid md -> list of start/end tag positions
+// todo: if "__", leave it as two underscores, dont go to italic
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var output strings.Builder
@@ -116,14 +119,14 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	prev := 0
 	var btnPairs []Button
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
-		currChar := containedMDChars[i]
-		posArr := v[currChar]
-		if len(posArr) <= 0 {
+		currChar := containedMDChars[i] // check current character
+		posArr := v[currChar] // get the list of positions for relevant character
+		if len(posArr) <= 0 { // if no positions left, pass (sanity check)
 			continue
 		}
 		// if we're past the currChar position, pass and update
 		if posArr[0] < prev {
-			v[currChar] = posArr[1:]
+			v[currChar] = posArr[1:] // more sanity checks; if position is past, move on
 			continue
 		}
 		switch currChar {
@@ -157,13 +160,16 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				continue
 			}
 			ok := false
+			var skipped int
 			var sndPos int
-			for _, sndPos = range rest {
-				rest = rest[1:]
-				if validEnd(sndPos, input) {
+			for idx, tmpSndPos := range rest {
+				if validEnd(tmpSndPos, input) {
+					rest = rest[idx+1:]
+					sndPos = tmpSndPos
 					ok = true
 					break
 				}
+				skipped++
 			}
 			if !ok {
 				continue
@@ -175,7 +181,20 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			output.WriteString(string(input[fstPos+1 : sndPos]))
 			output.WriteString(string(closeHTML[currChar]))
 			prev = sndPos + 1
+
+			// ensure that items skipped for sndpos balance out with the count
+			for _, m := range containedMDChars[cnt+1:] {
+				if skipped <= 0 {
+					break
+				}
+				if m == currChar {
+					skipped--
+				}
+				cnt++
+			}
 			i = cnt // set i to copy
+
+
 			for x, y := range bkp {
 				v[x] = y
 			}
@@ -328,11 +347,13 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			}
 			prev = closingClose + 1
 			i = closingClose
+
 		case '[', ']', '(', ')':
 			out.WriteString(html.UnescapeString(string(r[prev:i])))
 			out.WriteRune('\\')
 			out.WriteRune(r[i])
 			prev = i + 1
+
 		case '\\':
 			out.WriteString(html.UnescapeString(string(r[prev : i+1]))) // + 1 to include curr
 			out.WriteRune(r[i])
@@ -373,5 +394,28 @@ func contains(r rune, rr []rune) bool {
 		}
 	}
 
+	return false
+}
+
+// debug tools
+func underlinePos(s []rune, ps ...int) {
+	fmt.Println(string(s))
+
+	for idx, _ := range s {
+		if containsInt(idx, ps) {
+			fmt.Print("^")
+		} else {
+			fmt.Print(" ")
+		}
+	}
+	fmt.Println()
+}
+
+func containsInt(i int, is []int) bool {
+	for _, x := range is {
+		if x == i {
+			return true
+		}
+	}
 	return false
 }
