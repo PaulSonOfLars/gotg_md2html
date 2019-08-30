@@ -223,6 +223,7 @@ func TestReverse(t *testing.T) {
 		"`test \\`escaped` backticks",
 		"`test\\` escaped` backticks",
 		"\\_test_",
+		"\\\\_test_",
 	} {
 		assert.Equal(t, MD2HTML(test), MD2HTML(Reverse(MD2HTML(test), nil)))
 	}
@@ -271,11 +272,11 @@ func TestReverseBtns(t *testing.T) {
 		}, {
 			text:    "I dont even knowww \\[ stuff",
 			buttons: nil,
-			out:     "I dont even knowww \\\\[ stuff",
+			out:     "I dont even knowww \\\\\\[ stuff", // -> \ (e:\\) becomes \\ (e:\\\\) and [ becomes \] (e:\\[) so \\\\\\[
 		}, {
 			text:    "I dont even knowww \\\\[ stuff",
 			buttons: nil,
-			out:     "I dont even knowww \\\\\\\\[ stuff",
+			out:     "I dont even knowww \\\\\\\\\\[ stuff",
 		}, {
 			text: "Hello there",
 			buttons: []Button{

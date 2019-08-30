@@ -347,17 +347,11 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			prev = closingClose + 1
 			i = closingClose
 
-		case '_', '*', '`', '[', ']', '(', ')':
+		case '\\', '_', '*', '`', '[', ']', '(', ')': // these all need to be escaped to ensure we retain the same message
 			out.WriteString(html.UnescapeString(string(r[prev:i])))
 			out.WriteRune('\\')
 			out.WriteRune(r[i])
 			prev = i + 1
-
-		case '\\':
-			out.WriteString(html.UnescapeString(string(r[prev : i+1]))) // + 1 to include curr
-			out.WriteRune(r[i])
-			i++
-			prev = i
 		}
 	}
 	out.WriteString(html.UnescapeString(string(r[prev:])))
