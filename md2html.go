@@ -120,7 +120,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var btnPairs []Button
 	for i := 0; i < len(containedMDChars) && prev < len(input); i++ {
 		currChar := containedMDChars[i] // check current character
-		posArr := v[currChar] // get the list of positions for relevant character
+		posArr := v[currChar]           // get the list of positions for relevant character
 		if len(posArr) <= 0 { // if no positions left, pass (sanity check)
 			continue
 		}
@@ -193,7 +193,6 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 				cnt++
 			}
 			i = cnt // set i to copy
-
 
 			for x, y := range bkp {
 				v[x] = y
@@ -348,7 +347,7 @@ func (cv *Converter) reverse(r []rune, buttons []Button) string {
 			prev = closingClose + 1
 			i = closingClose
 
-		case '[', ']', '(', ')':
+		case '_', '*', '`', '[', ']', '(', ')':
 			out.WriteString(html.UnescapeString(string(r[prev:i])))
 			out.WriteRune('\\')
 			out.WriteRune(r[i])
