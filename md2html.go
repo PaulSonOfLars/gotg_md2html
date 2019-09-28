@@ -8,16 +8,10 @@ import (
 	"unicode"
 )
 
-var openHTML = map[rune][]rune{
-	'_': []rune("<i>"),
-	'*': []rune("<b>"),
-	'`': []rune("<code>"),
-}
-
-var closeHTML = map[rune][]rune{
-	'_': []rune("</i>"),
-	'*': []rune("</b>"),
-	'`': []rune("</code>"),
+var tagHTML = map[rune]string{
+	'_': "i",
+	'*': "b",
+	'`': "code",
 }
 
 var allMdChars = []rune{'_', '*', '`', '[', ']', '(', ')', '\\'}
@@ -202,9 +196,9 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 
 			bkp[currChar] = rest
 			output.WriteString(string(input[prev:fstPos]))
-			output.WriteString(string(openHTML[currChar]))
+			output.WriteString("<" + tagHTML[currChar] + ">")
 			output.WriteString(string(input[fstPos+1 : sndPos]))
-			output.WriteString(string(closeHTML[currChar]))
+			output.WriteString("</" + tagHTML[currChar] + ">")
 			prev = sndPos + 1
 
 			// ensure that items skipped for sndpos balance out with the count
@@ -303,7 +297,7 @@ func validEnd(pos int, input []rune) bool {
 // todo: remove regexp dep
 var link = regexp.MustCompile(`a href="(.*)"`)
 
-// NOTE: If this gets edited, make sure to edit the strpi() method too 
+// NOTE: If this gets edited, make sure to edit the strpi() method too
 // TODO: this needs to return string, error to handle bad parsing
 func (cv *Converter) reverse(r []rune, buttons []Button) string {
 	prev := 0
