@@ -90,3 +90,9 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 		assert.ElementsMatch(t, x.btns, b)
 	}
 }
+
+func BenchmarkMD2HTMLV2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		v, bs2 = MD2HTMLButtonsV2(message)
+	}
+}

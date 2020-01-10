@@ -384,6 +384,7 @@ func TestStripMD(t *testing.T) {
 
 var v string
 var bs []Button
+var bs2 []ButtonV2
 
 func BenchmarkMD2HTML(b *testing.B) {
 	for i := 0; i < b.N; i++ {

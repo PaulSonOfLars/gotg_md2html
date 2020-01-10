@@ -91,7 +91,7 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 				out.WriteString(item)
 				continue
 			}
-			nStart, nEnd := i+1, idx+1
+			nStart, nEnd := i+1, i+idx+2-len(item) // +2 because start is at +1 already
 
 			// internal is guaranteed not to have any valid item closings, since we've greedily taken them.
 			nestedT, nestedB := v.md2html(in[nStart:nEnd], b)
@@ -110,8 +110,8 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 				continue
 			}
 			content := string(in[idx+2 : idx+idx2])
-			text := in[i+1 : idx]
-			followT, followB := v.md2html(in[idx+idx2+1:], b) // offset?
+			text := in[i+1 : i+idx]
+			followT, followB := v.md2html(in[i+idx+idx2+1:], b) // offset?
 
 			if b && strings.HasPrefix(content, v.BtnPrefix) {
 				content = strings.TrimLeft(content[len(v.BtnPrefix):], "/")
