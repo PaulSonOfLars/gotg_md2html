@@ -157,7 +157,7 @@ func findLinkSections(in []rune) (int, int) {
 	var offset int
 	foundTextEnd := false
 	for offset < len(in) {
-		idx := stringIndex(string(in[offset:]), "](")
+		idx := stringIndex(in[offset:], "](")
 		if idx < 0 {
 			return -1, -1
 		}
@@ -174,7 +174,7 @@ func findLinkSections(in []rune) (int, int) {
 
 	offset = textEnd
 	for offset < len(in) {
-		idx := stringIndex(string(in[offset:]), ")")
+		idx := stringIndex(in[offset:], ")")
 		if idx < 0 {
 			return -1, -1
 		}
@@ -188,27 +188,10 @@ func findLinkSections(in []rune) (int, int) {
 
 }
 
-func getNext(in []rune, s string) int {
-	offset := 0
-	for offset < len(in) {
-		idx := stringIndex(string(in[offset:]), s)
-		if idx < 0 {
-			return -1
-		}
-
-		end := offset + idx + len(s) - 1 // to account for __
-		if !IsEscaped(in, end) {
-			return end
-		}
-		offset = end + 1
-	}
-	return -1
-}
-
 func getValidEnd(in []rune, s string) int {
 	offset := 0
 	for offset < len(in) {
-		idx := stringIndex(string(in[offset:]), s)
+		idx := stringIndex(in[offset:], s)
 		if idx < 0 {
 			return -1
 		}
@@ -222,18 +205,21 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
-func runeIndex(in string, r rune) int {
-	i := strings.IndexRune(in, r)
-	if i < 0 {
-		return i
+func stringIndex(in []rune, s string) int {
+	r := []rune(s)
+	for idx := range in {
+		if startsWith(in[idx:], r) {
+			return idx
+		}
 	}
-	return len([]rune(in[:i]))
+	return -1
 }
 
-func stringIndex(in string, s string) int {
-	i := strings.Index(in, s)
-	if i < 0 {
-		return i
+func startsWith(i []rune, p []rune) bool {
+	for idx, x := range p {
+		if i[idx] != x {
+			return false
+		}
 	}
-	return len([]rune(in[:i]))
+	return true
 }
