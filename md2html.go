@@ -101,8 +101,6 @@ func IsEscaped(input []rune, pos int) bool {
 	return (pos-i)%2 == 0
 }
 
-// todo: find a way to mark tg entities as a source of truth, even if invalid md -> list of start/end tag positions
-// todo: if "__", leave it as two underscores, dont go to italic
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var output strings.Builder

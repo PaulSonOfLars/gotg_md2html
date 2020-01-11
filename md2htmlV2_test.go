@@ -21,6 +21,9 @@ func TestMD2HTMLV2Basic(t *testing.T) {
 		}, {
 			in:  "__hello__",
 			out: "<u>hello</u>",
+		}, {
+			in:  "```hello```",
+			out: "<pre>hello</pre>",
 		},
 	} {
 		assert.Equal(t, x.out, MD2HTMLV2(x.in))

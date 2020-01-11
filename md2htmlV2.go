@@ -37,16 +37,17 @@ func MD2HTMLButtonsV2(in string) (string, []ButtonV2) {
 }
 
 var chars = map[string]string{
-	"`":  "code",
-	"_":  "i",
-	"*":  "b",
-	"~":  "s",
-	"__": "u",
-	"[":  "", // for links
-	"]":  "", // for links
-	"(":  "", // for links
-	")":  "", // for links
-	"\\": "", // for escapes
+	"`":   "code",
+	"```": "pre",
+	"_":   "i",
+	"*":   "b",
+	"~":   "s",
+	"__":  "u",
+	"[":   "", // for links
+	"]":   "", // for links
+	"(":   "", // for links
+	")":   "", // for links
+	"\\":  "", // for escapes
 }
 
 func (v ConverterV2) MD2HTML(in string) string {
@@ -81,11 +82,14 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 		}
 
 		switch c {
-		case '`', '*', '~', '_': // '__' is included here too
+		case '`', '*', '~', '_': // '__' and '```' are included here too
 			item := string(c)
-			if c == '_' && i+1 < len(in) && in[i+1] == '_' {
+			if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
 				item = "__"
 				i++
+			} else if c == '`' && i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
+				item = "```"
+				i += 2
 			}
 
 			if i+1 >= len(in) {
