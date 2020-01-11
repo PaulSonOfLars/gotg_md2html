@@ -7,103 +7,137 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMD2HTML(t *testing.T) {
-	type mdTestStruct struct {
-		input  string
-		output string
+var basicMD = []struct {
+	in  string
+	out string
+}{
+	{
+		in:  "hello",
+		out: "hello",
+	}, {
+		in:  "_hello_",
+		out: "<i>hello</i>",
+	}, {
+		in:  "*hello*",
+		out: "<b>hello</b>",
+	}, {
+		in:  "`hello`",
+		out: "<code>hello</code>",
+	}, {
+		in:  "[hello](test.com)",
+		out: `<a href="test.com">hello</a>`,
+	}, {
+		in:  `_hello\_ there_`,
+		out: "<i>hello_ there</i>",
+	},
+}
+
+var advancedMD = []struct {
+	in  string
+	out string
+}{
+	{
+		in:  "hello there",
+		out: "hello there",
+	}, {
+		in:  "_hello_ there",
+		out: "<i>hello</i> there",
+	}, {
+		in:  "hello _there_",
+		out: "hello <i>there</i>",
+	}, {
+		in:  "_hello there_",
+		out: "<i>hello there</i>",
+	}, {
+		in:  "_hello_ there_",
+		out: "<i>hello</i> there_",
+	}, {
+		in:  "_hello _there_",
+		out: "<i>hello _there</i>",
+	}, {
+		in:  "_hello _ there_",
+		out: "<i>hello _ there</i>",
+	}, {
+		in:  "so_hello _there_",
+		out: "so_hello <i>there</i>",
+	}, {
+		in:  "_hello you_there_",
+		out: "<i>hello you_there</i>",
+	}, {
+		in:  "`hello` there",
+		out: "<code>hello</code> there",
+	}, {
+		in:  "*hello* there",
+		out: "<b>hello</b> there",
+	}, {
+		in:  "hello [there](link.com)",
+		out: `hello <a href="link.com">there</a>`,
+	}, {
+		in:  "hello [there](buttonurl://link.com)",
+		out: `hello <a href="buttonurl://link.com">there</a>`,
+	}, {
+		in:  "hello [there[]](link.com)",
+		out: `hello <a href="link.com">there[]</a>`,
+	}, {
+		in:  "[hello] soo] () [there](link.com)",
+		out: `<a href="link.com">hello] soo] () [there</a>`,
+	}, {
+		in:  "[hello] soo] () [there](link.com)",
+		out: `<a href="link.com">hello] soo] () [there</a>`,
+	}, {
+		in:  "]]]]]]] )))))))  ((((([link](example.com) [link2](example2.com) [link3](example3.com) ]]]]](((())))",
+		out: `]]]]]]] )))))))  (((((<a href="example.com">link</a> <a href="example2.com">link2</a> <a href="example3.com">link3</a> ]]]]](((())))`,
+	}, {
+		in:  "[reallybiglink\\](example3.com) [insidelink](exampleLink.com)",
+		out: `<a href="exampleLink.com">reallybiglink](example3.com) [insidelink</a>`,
+	}, {
+		in:  "[link](example.com) [escapedlink2]\\(example2.com) \\[escapedlink3](example3.com) [notalink] (no.com) [reallybiglink\\](example3.com) [insidelink](example3.com)",
+		out: `<a href="example.com">link</a> <a href="example3.com">escapedlink2](example2.com) [escapedlink3</a> <a href="example3.com">notalink] (no.com) [reallybiglink](example3.com) [insidelink</a>`,
+	}, {
+		in:  "hello there _friend_ how * are _ you? [link[with a sub box!]](example.com) emoji [emoji link ](example.com)",
+		out: `hello there <i>friend</i> how * are _ you? <a href="example.com">link[with a sub box!]</a> emoji <a href="example.com">emoji link </a>`,
+	}, {
+		in:  "_hello_1",
+		out: "_hello_1",
+	}, {
+		in:  `*\**`,
+		out: "<b>*</b>",
+	}, {
+		in:  "hell_o [there[]](link.com/this_isfine)",
+		out: `hell_o <a href="link.com/this_isfine">there[]</a>`,
+	}, {
+		in:  "\\",
+		out: "\\",
+	}, {
+		in:  "_| _ '_ ` _ _`",
+		out: "<i>| _ &#39;</i> ` _ _`",
+	}, {
+		in:  "_| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _`",
+		out: "<i>| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ _`",
+	}, {
+		in:  "_hey\\_ there_",
+		out: "<i>hey_ there</i>",
+	}, {
+		in:  "\\_input_",
+		out: "_input_",
+	},
+}
+
+func TestMD2HTMLBasic(t *testing.T) {
+	for _, x := range basicMD {
+		assert.Equal(t, x.out, MD2HTML(x.in))
 	}
-	for _, test := range []mdTestStruct{
-		{
-			input:  "hello there",
-			output: "hello there",
-		}, {
-			input:  "_hello_ there",
-			output: "<i>hello</i> there",
-		}, {
-			input:  "hello _there_",
-			output: "hello <i>there</i>",
-		}, {
-			input:  "_hello there_",
-			output: "<i>hello there</i>",
-		}, {
-			input:  "_hello_ there_",
-			output: "<i>hello</i> there_",
-		}, {
-			input:  "_hello _there_",
-			output: "<i>hello _there</i>",
-		}, {
-			input:  "_hello _ there_",
-			output: "<i>hello _ there</i>",
-		}, {
-			input:  "so_hello _there_",
-			output: "so_hello <i>there</i>",
-		}, {
-			input:  "_hello you_there_",
-			output: "<i>hello you_there</i>",
-		}, {
-			input:  "`hello` there",
-			output: "<code>hello</code> there",
-		}, {
-			input:  "*hello* there",
-			output: "<b>hello</b> there",
-		}, {
-			input:  "hello [there](link.com)",
-			output: `hello <a href="link.com">there</a>`,
-		}, {
-			input:  "hello [there](buttonurl://link.com)",
-			output: `hello <a href="buttonurl://link.com">there</a>`,
-		}, {
-			input:  "hello [there[]](link.com)",
-			output: `hello <a href="link.com">there[]</a>`,
-		}, {
-			input:  "[hello] soo] () [there](link.com)",
-			output: `<a href="link.com">hello] soo] () [there</a>`,
-		}, {
-			input:  "_hello_ `there` *bold* [url](link.com) _`notcode`_ *_notitalic_* [weird not italic _](morelink.co.uk)_",
-			output: "<i>hello</i> <code>there</code> <b>bold</b> <a href=\"link.com\">url</a> <i>`notcode`</i> <b>_notitalic_</b> <a href=\"morelink.co.uk\">weird not italic _</a>_",
-		}, {
-			input:  "[hello] soo] () [there](link.com)",
-			output: `<a href="link.com">hello] soo] () [there</a>`,
-		}, {
-			input:  "]]]]]]] )))))))  ((((([link](example.com) [link2](example2.com) [link3](example3.com) ]]]]](((())))",
-			output: `]]]]]]] )))))))  (((((<a href="example.com">link</a> <a href="example2.com">link2</a> <a href="example3.com">link3</a> ]]]]](((())))`,
-		}, {
-			input:  "[reallybiglink\\](example3.com) [insidelink](exampleLink.com)",
-			output: `<a href="exampleLink.com">reallybiglink](example3.com) [insidelink</a>`,
-		}, {
-			input:  "[link](example.com) [escapedlink2]\\(example2.com) \\[escapedlink3](example3.com) [notalink] (no.com) [reallybiglink\\](example3.com) [insidelink](example3.com)",
-			output: `<a href="example.com">link</a> <a href="example3.com">escapedlink2](example2.com) [escapedlink3</a> <a href="example3.com">notalink] (no.com) [reallybiglink](example3.com) [insidelink</a>`,
-		}, {
-			input:  "hello there _friend_ how * are _ you? [link[with a sub box!]](example.com) emoji [emoji link ](example.com)",
-			output: `hello there <i>friend</i> how * are _ you? <a href="example.com">link[with a sub box!]</a> emoji <a href="example.com">emoji link </a>`,
-		}, {
-			input:  "_hello_1",
-			output: "_hello_1",
-		}, {
-			input:  `*\**`,
-			output: "<b>*</b>",
-		}, {
-			input:  "hell_o [there[]](link.com/this_isfine)",
-			output: `hell_o <a href="link.com/this_isfine">there[]</a>`,
-		}, {
-			input:  "\\",
-			output: "\\",
-		}, {
-			input:  "_| _ '_ ` _ _`",
-			output: "<i>| _ &#39;</i> ` _ _`",
-		}, {
-			input:  "_| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _` _| _ '_ ` _ _`",
-			output: "<i>| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ <i>` _| _ &#39;</i> ` _ _`",
-		}, {
-			input:  "_hey\\_ there_",
-			output: "<i>hey_ there</i>",
-		}, {
-			input:  "\\_input_",
-			output: "_input_",
-		},
-	} {
-		assert.Equal(t, test.output, MD2HTML(test.input))
+}
+
+func TestMD2HTMLAdvanced(t *testing.T) {
+	for _, test := range advancedMD {
+		assert.Equal(t, test.out, MD2HTML(test.in))
 	}
+
+	assert.Equal(t,
+		"<i>hello</i> <code>there</code> <b>bold</b> <a href=\"link.com\">url</a> <i>`notcode`</i> <b>_notitalic_</b> <a href=\"morelink.co.uk\">weird not italic _</a>_",
+		MD2HTML("_hello_ `there` *bold* [url](link.com) _`notcode`_ *_notitalic_* [weird not italic _](morelink.co.uk)_"),
+	)
 }
 
 func TestMD2HTMLButtons(t *testing.T) {

@@ -6,34 +6,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMD2HTMLV2(t *testing.T) {
+func TestMD2HTMLV2Basic(t *testing.T) {
+	for _, x := range append(basicMD) {
+		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+	}
+	// new mdv2 stuff
 	for _, x := range []struct {
 		in  string
 		out string
 	}{
 		{
-			in:  "hello",
-			out: "hello",
-		}, {
-			in:  "_hello_",
-			out: "<i>hello</i>",
-		}, {
-			in:  "*hello*",
-			out: "<b>hello</b>",
-		}, {
-			in:  "`hello`",
-			out: "<code>hello</code>",
-		}, {
 			in:  "~hello~",
 			out: "<s>hello</s>",
 		}, {
 			in:  "__hello__",
 			out: "<u>hello</u>",
-		}, {
-			in:  "[hello](test.com)",
-			out: `<a href="test.com">hello</a>`,
 		},
 	} {
+		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+	}
+}
+
+func TestMD2HTMLV2Advanced(t *testing.T) {
+	for _, x := range advancedMD {
 		assert.Equal(t, x.out, MD2HTMLV2(x.in))
 	}
 }

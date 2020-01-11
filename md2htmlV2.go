@@ -69,6 +69,13 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 		}
 
 		if !validStart(i, in) {
+			if c == '\\' && i+1 < len(in) {
+				if _, ok := chars[string(in[i+1])]; ok {
+					out.WriteRune(in[i+1])
+					i++
+					continue
+				}
+			}
 			out.WriteRune(c)
 			continue
 		}
@@ -100,18 +107,16 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 
 		case '[':
 			// find ]( and then )
-			idx := stringIndex(string(in[i:]), "](")
-			if idx < 0 {
+			linkText, linkURL := findLinkSections(in[i:])
+			if linkText < 0 || linkURL < 0 {
 				out.WriteRune(c)
 				continue
 			}
-			idx2 := stringIndex(string(in[idx:]), ")")
-			if idx2 < 0 {
-				continue
-			}
-			content := string(in[idx+2 : idx+idx2])
-			text := in[i+1 : i+idx]
-			followT, followB := v.md2html(in[i+idx+idx2+1:], b) // offset?
+
+			content := string(in[i+linkText+2 : i+linkURL])
+			text := in[i+1 : i+linkText]
+			end := i + linkURL + 1
+			followT, followB := v.md2html(in[end:], b)
 
 			if b && strings.HasPrefix(content, v.BtnPrefix) {
 				content = strings.TrimLeft(content[len(v.BtnPrefix):], "/")
@@ -129,17 +134,75 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 			nestedT, nestedB := v.md2html(text, true)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)
 
+		case ']', '(', ')':
+			out.WriteRune(c)
+
 		case '\\':
-			if i < len(in)-1 {
-				if _, ok := chars[string(c)]; ok {
-					out.WriteRune(c)
+			if i+1 < len(in) {
+				if _, ok := chars[string(in[i+1])]; ok {
+					out.WriteRune(in[i+1])
+					i++
+					continue
 				}
 			}
-			out.WriteString("\\")
+			out.WriteRune(c)
 		}
 	}
 
 	return out.String(), nil
+}
+
+func findLinkSections(in []rune) (int, int) {
+	var textEnd, linkEnd int
+	var offset int
+	foundTextEnd := false
+	for offset < len(in) {
+		idx := stringIndex(string(in[offset:]), "](")
+		if idx < 0 {
+			return -1, -1
+		}
+		textEnd = offset + idx
+		if !IsEscaped(in, textEnd) {
+			foundTextEnd = true
+			break
+		}
+		offset = idx + 1
+	}
+	if !foundTextEnd {
+		return -1, -1
+	}
+
+	offset = textEnd
+	for offset < len(in) {
+		idx := stringIndex(string(in[offset:]), ")")
+		if idx < 0 {
+			return -1, -1
+		}
+		linkEnd = offset + idx
+		if !IsEscaped(in, linkEnd) {
+			return textEnd, linkEnd
+		}
+		offset = idx + 1
+	}
+	return -1, -1
+
+}
+
+func getNext(in []rune, s string) int {
+	offset := 0
+	for offset < len(in) {
+		idx := stringIndex(string(in[offset:]), s)
+		if idx < 0 {
+			return -1
+		}
+
+		end := offset + idx + len(s) - 1 // to account for __
+		if !IsEscaped(in, end) {
+			return end
+		}
+		offset = end + 1
+	}
+	return -1
 }
 
 func getValidEnd(in []rune, s string) int {
@@ -150,8 +213,8 @@ func getValidEnd(in []rune, s string) int {
 			return -1
 		}
 
-		end := idx + len(s) - 1 // to account for __
-		if validEnd(end, in) {
+		end := offset + idx + len(s) - 1 // to account for __
+		if validEnd(end, in) && !IsEscaped(in, end) {
 			return end
 		}
 		offset = end + 1
