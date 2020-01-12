@@ -457,7 +457,7 @@ func contains(r rune, rr []rune) bool {
 
 // debug tools
 func underlinePos(s []rune, ps ...int) {
-	qfmt.Println(string(s))
+	fmt.Println(string(s))
 
 	for idx, _ := range s {
 		if containsInt(idx, ps) {
