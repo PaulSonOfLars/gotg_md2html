@@ -52,7 +52,7 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			case "i", "em":
 				out.WriteString("_" + nested + "_")
 			case "u", "ins":
-				out.WriteString("__" + nested + "_")
+				out.WriteString("__" + nested + "__")
 			case "s", "strike", "del":
 				out.WriteString("~" + nested + "~")
 			case "code":
