@@ -24,6 +24,27 @@ func TestMD2HTMLV2Basic(t *testing.T) {
 		}, {
 			in:  "```hello```",
 			out: "<pre>hello</pre>",
+			// NOTE: Decide on whether this is just a sad casualty of markdown parsing, or if:
+			//  The closing tag should be the last viable part, if in a sequence. (eg 3x'_', last two are underline closes)
+			//  This means that all other nested items of that tag should be escaped, to avoid:
+			//  __underline  __double underline____, which is impossible. The HTML for this should be
+			//  <u>underline __double underline(__)</u>(__) where () are up to opinion.
+			//  Following my opinion, it should be the first.
+		}, {
+			in:  "___italic underline___",
+			out: "<u><i>italic underline</i></u>",
+		}, {
+			in:  "__underline __double____",
+			out: "<u>underline <u>double</u></u>",
+		}, {
+			in:  "__underline \\_\\_not double____",
+			out: "<u>underline __not double__</u>",
+		}, {
+			in:  "____double underline____",
+			out: "<u><u>double underline</u></u>",
+		}, {
+			in:  "````coded code block````",
+			out: "<pre><code>coded code block</code></pre>",
 		},
 	} {
 		assert.Equal(t, x.out, MD2HTMLV2(x.in))
@@ -55,7 +76,7 @@ func TestNotMD2HTMLV2(t *testing.T) {
 			out: "_hello_there",
 		}, {
 			in:  "_hello__",
-			out: "<i>hello</i>_",
+			out: "<i>hello_</i>",
 		}, {
 			in:  "__hello__there",
 			out: "__hello__there",
@@ -86,14 +107,6 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 		txt, b := MD2HTMLButtonsV2(x.in)
 		assert.Equal(t, x.out, txt)
 		assert.ElementsMatch(t, x.btns, b)
-	}
-}
-
-func TestReverseV2(t *testing.T) {
-	for _, test := range reverseTest {
-		out, err := ReverseV2(MD2HTMLV2(test), nil)
-		assert.NoError(t, err, "Error for:\n%s", test)
-		assert.Equal(t, MD2HTMLV2(test), MD2HTMLV2(out))
 	}
 }
 

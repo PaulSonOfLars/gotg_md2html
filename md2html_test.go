@@ -387,34 +387,36 @@ func TestIsEscaped(t *testing.T) {
 	}
 }
 
+var stripMD = []struct {
+	in     string
+	output string
+}{
+	{
+		in:     "this is text",
+		output: "this is text",
+	}, {
+		in:     "_italic_",
+		output: "italic",
+	}, {
+		in:     "*bold*",
+		output: "bold",
+	}, {
+		in:     "`code`",
+		output: "code",
+	}, {
+		in:     "[link](test.html)",
+		output: "link",
+	}, {
+		in:     "_test * italics_",
+		output: "test * italics",
+	}, {
+		in:     "i dont *even* _know_ `why *_ you would`",
+		output: "i dont even know why *_ you would",
+	},
+}
+
 func TestStripMD(t *testing.T) {
-	for _, x := range []struct {
-		in     string
-		output string
-	}{
-		{
-			in:     "this is text",
-			output: "this is text",
-		}, {
-			in:     "_italic_",
-			output: "italic",
-		}, {
-			in:     "*bold*",
-			output: "bold",
-		}, {
-			in:     "`code`",
-			output: "code",
-		}, {
-			in:     "[link](test.html)",
-			output: "link",
-		}, {
-			in:     "_test * italics_",
-			output: "test * italics",
-		}, {
-			in:     "i dont *even* _know_ `why *_ you would`",
-			output: "i dont even know why *_ you would",
-		},
-	} {
+	for _, x := range stripMD {
 		assert.Equal(t, x.output, StripMD(x.in), "failed to strip all markdown")
 	}
 }
