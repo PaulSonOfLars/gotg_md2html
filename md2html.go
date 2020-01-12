@@ -295,7 +295,7 @@ func validEnd(pos int, input []rune) bool {
 // todo: remove regexp dep
 var link = regexp.MustCompile(`a href="(.*)"`)
 
-// NOTE: If this gets edited, make sure to edit the strpi() method too
+// NOTE: If this gets edited, make sure to edit the strip() method too
 // TODO: this needs to return string, error to handle bad parsing
 func (cv *Converter) reverse(r []rune, buttons []Button) string {
 	prev := 0

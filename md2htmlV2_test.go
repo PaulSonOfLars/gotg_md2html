@@ -89,6 +89,14 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 	}
 }
 
+func TestReverseV2(t *testing.T) {
+	for _, test := range reverseTest {
+		out, err := ReverseV2(MD2HTMLV2(test), nil)
+		assert.NoError(t, err, "Error for:\n%s", test)
+		assert.Equal(t, MD2HTMLV2(test), MD2HTMLV2(out))
+	}
+}
+
 func BenchmarkMD2HTMLV2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		v, bs2 = MD2HTMLButtonsV2(message)

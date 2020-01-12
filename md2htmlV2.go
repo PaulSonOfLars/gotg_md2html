@@ -1,6 +1,7 @@
 package tg_md2html
 
 import (
+	"fmt"
 	"html"
 	"strings"
 )
@@ -156,6 +157,93 @@ func (v ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 	return out.String(), nil
 }
 
+func (v ConverterV2) Reverse(in string, bs []ButtonV2) (string, error) {
+	return v.reverse([]rune(in), bs)
+}
+
+func (v ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
+	prev := 0
+	out := strings.Builder{}
+	for i := 0; i < len(in); i++ {
+		switch in[i] {
+		case '<':
+			c := getTagClose(in[i+1:])
+			if c < 0 {
+				// "no close tag"
+				return "", fmt.Errorf("no closing '>' for opening bracket at %d", i)
+			}
+			closeTag := i + c + 1
+			tagContent := string(in[i+1 : closeTag])
+			tagFields := strings.Fields(tagContent)
+			if len(tagFields) < 1 {
+				return "", fmt.Errorf("no tag name for HTML tag started at %d", i)
+			}
+			tag := tagFields[0]
+
+			co, cc := getClosingTag(in[closeTag+1:], tag)
+			if co < 0 || cc < 0 {
+				// "no closing open"
+				return "", fmt.Errorf("no closing tag for HTML tag %s started at %d", tag, i)
+			}
+			closingOpen, closingClose := closeTag+1+co, closeTag+1+cc
+			out.WriteString(html.UnescapeString(string(in[prev:i])))
+
+			nested, err := ReverseV2(string(in[closeTag+1:closingOpen]), nil)
+			if err != nil {
+				return "", err
+			}
+
+			switch tag {
+			case "b", "strong":
+				out.WriteString("*" + nested + "*")
+			case "i", "em":
+				out.WriteString("_" + nested + "_")
+			case "u", "ins":
+				out.WriteString("__" + nested + "_")
+			case "s", "strike", "del":
+				out.WriteString("~" + nested + "~")
+			case "code":
+				out.WriteString("`" + nested + "`")
+			case "pre":
+				out.WriteString("```" + nested + "```")
+			case "a":
+				if link.MatchString(tagContent) {
+					matches := link.FindStringSubmatch(tagContent)
+					out.WriteString("[" + nested + "](" + matches[1] + ")")
+				} else {
+					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
+				}
+			default:
+				return "", fmt.Errorf("unknown tag %q", tag)
+			}
+
+			prev = closingClose + 1
+			i = closingClose
+
+		case '\\', '_', '*', '~', '`', '[', ']', '(', ')': // these all need to be escaped to ensure we retain the same message
+			out.WriteString(html.UnescapeString(string(in[prev:i])))
+			out.WriteRune('\\')
+			out.WriteRune(in[i])
+			prev = i + 1
+		}
+	}
+	out.WriteString(html.UnescapeString(string(in[prev:])))
+
+	for _, btn := range buttons {
+		out.WriteString("\n[" + btn.Name + "](" + v.BtnPrefix + "://" + html.UnescapeString(btn.Content))
+		if btn.SameLine {
+			out.WriteString(v.SameLineSuffix)
+		}
+		out.WriteString(")")
+	}
+
+	return out.String(), nil
+}
+
+func ReverseV2(in string, bs []ButtonV2) (string, error) {
+	return defaultConverterV2.Reverse(in, bs)
+}
+
 func findLinkSections(in []rune) (int, int) {
 	var textEnd, linkEnd int
 	var offset int
@@ -209,6 +297,45 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
+func getTagClose(in []rune) int {
+	for ix, c := range in {
+		if c == '>' {
+			return ix
+		}
+	}
+	return -1
+}
+
+func getClosingTagOpen(in []rune) int {
+	for ix, c := range in {
+		if c == '<' && ix+1 < len(in) && in[ix+1] == '/' {
+			return ix
+		}
+	}
+	return -1
+}
+
+func getClosingTag(in []rune, tag string) (int, int) {
+	offset := 0
+	for offset < len(in) {
+		o := getClosingTagOpen(in[offset:])
+		if o < 0 {
+			return -1, -1
+		}
+		open := offset + o
+		c := getTagClose(in[open+2:])
+		if c < 0 {
+			return -1, -1
+		}
+		close := open + 2 + c
+		if string(in[open+2:close]) == tag {
+			return open, close
+		}
+		offset = open + 1
+	}
+	return -1, -1
+}
+
 func stringIndex(in []rune, s string) int {
 	r := []rune(s)
 	for idx := range in {
@@ -221,7 +348,7 @@ func stringIndex(in []rune, s string) int {
 
 func startsWith(i []rune, p []rune) bool {
 	for idx, x := range p {
-		if i[idx] != x {
+		if idx >= len(i) || i[idx] != x {
 			return false
 		}
 	}
