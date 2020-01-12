@@ -36,12 +36,12 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			co, cc := getClosingTag(in[closeTag+1:], tag)
 			if co < 0 || cc < 0 {
 				// "no closing open"
-				return "", fmt.Errorf("no closing tag for HTML tag %s started at %d", tag, i)
+				return "", fmt.Errorf("no closing tag for HTML tag %q started at %d", tag, i)
 			}
 			closingOpen, closingClose := closeTag+1+co, closeTag+1+cc
 			out.WriteString(html.UnescapeString(string(in[prev:i])))
 
-			nested, err := ReverseV2(string(in[closeTag+1:closingOpen]), nil)
+			nested, err := cv.reverse(in[closeTag+1:closingOpen], nil)
 			if err != nil {
 				return "", err
 			}

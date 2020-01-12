@@ -59,6 +59,15 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
+func getTagOpen(in []rune) int {
+	for ix, c := range in {
+		if c == '<' {
+			return ix
+		}
+	}
+	return -1
+}
+
 func getTagClose(in []rune) int {
 	for ix, c := range in {
 		if c == '>' {
@@ -68,19 +77,18 @@ func getTagClose(in []rune) int {
 	return -1
 }
 
-func getClosingTagOpen(in []rune) int {
-	for ix, c := range in {
-		if c == '<' && ix+1 < len(in) && in[ix+1] == '/' {
-			return ix
-		}
+func isClosingTag(in []rune, pos int) bool {
+	if in[pos] == '<' && pos+1 < len(in) && in[pos+1] == '/' {
+		return true
 	}
-	return -1
+	return false
 }
 
 func getClosingTag(in []rune, tag string) (int, int) {
 	offset := 0
+	subtags := 0
 	for offset < len(in) {
-		o := getClosingTagOpen(in[offset:])
+		o := getTagOpen(in[offset:])
 		if o < 0 {
 			return -1, -1
 		}
@@ -89,9 +97,15 @@ func getClosingTag(in []rune, tag string) (int, int) {
 		if c < 0 {
 			return -1, -1
 		}
+
 		close := open + 2 + c
-		if string(in[open+2:close]) == tag {
-			return open, close
+		if string(in[open+1:close]) == tag { // found a nested tag, this is annoying
+			subtags++
+		} else if isClosingTag(in, open) && string(in[open+2:close]) == tag {
+			if subtags == 0 {
+				return open, close
+			}
+			subtags--
 		}
 		offset = open + 1
 	}

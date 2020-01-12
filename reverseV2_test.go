@@ -12,4 +12,12 @@ func TestReverseV2(t *testing.T) {
 		assert.NoError(t, err, "Error for:\n%s", test)
 		assert.Equal(t, MD2HTMLV2(test), MD2HTMLV2(out))
 	}
+
+	for _, test := range []string{
+		"___________test_______",
+	} {
+		out, err := ReverseV2(MD2HTMLV2(test), nil)
+		assert.NoError(t, err, "Error for:\n%s", test)
+		assert.Equal(t, MD2HTMLV2(test), MD2HTMLV2(out))
+	}
 }
