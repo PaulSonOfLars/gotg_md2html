@@ -1,6 +1,7 @@
 package tg_md2html
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,15 +30,15 @@ func TestReverseV2Buttons(t *testing.T) {
 		btns []ButtonV2
 	}{
 		{
-			in:  "[hello](buttonurl:test.com)",
+			in:  "[hello](buttonurl://test.com)",
 			out: "",
 			btns: []ButtonV2{{
 				Name:    "hello",
 				Content: "test.com",
 			}},
 		}, {
-			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
-			out: "Some text, some <b>bold</b>, and a button ",
+			in:  "Some text, some *bold*, and a button\n[hello](buttonurl://test.com)",
+			out: "Some text, some <b>bold</b>, and a button",
 			btns: []ButtonV2{{
 				Name:    "hello",
 				Content: "test.com",
@@ -46,10 +47,11 @@ func TestReverseV2Buttons(t *testing.T) {
 	} {
 
 		txt, b := MD2HTMLButtonsV2(x.in)
+		txt = strings.TrimSpace(txt)
 		assert.Equal(t, x.out, txt)
 		assert.ElementsMatch(t, x.btns, b)
 		out, err := ReverseV2(txt, x.btns)
 		assert.NoError(t, err, "no error expected")
-		assert.Equal(t, x.in, out)
+		assert.Equal(t, x.in, strings.TrimSpace(out))
 	}
 }
