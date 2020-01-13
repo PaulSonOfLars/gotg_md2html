@@ -102,6 +102,13 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 				Name:    "hello",
 				Content: "test.com",
 			}},
+		}, {
+			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
+			out: "Some text, some <b>bold</b>, and a button ",
+			btns: []ButtonV2{{
+				Name:    "hello",
+				Content: "test.com",
+			}},
 		},
 	} {
 		txt, b := MD2HTMLButtonsV2(x.in)

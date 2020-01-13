@@ -83,7 +83,7 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	out.WriteString(html.UnescapeString(string(in[prev:])))
 
 	for _, btn := range buttons {
-		out.WriteString("\n[" + btn.Name + "](" + cv.BtnPrefix + "://" + html.UnescapeString(btn.Content))
+		out.WriteString("\n[" + btn.Name + "](" + cv.BtnPrefix + "//" + html.UnescapeString(btn.Content))
 		if btn.SameLine {
 			out.WriteString(cv.SameLineSuffix)
 		}
