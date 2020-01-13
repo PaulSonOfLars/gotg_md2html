@@ -14,7 +14,7 @@ func findLinkSections(in []rune) (int, int) {
 			foundTextEnd = true
 			break
 		}
-		offset = idx + 1
+		offset = textEnd + 1
 	}
 	if !foundTextEnd {
 		return -1, -1
@@ -30,7 +30,7 @@ func findLinkSections(in []rune) (int, int) {
 		if !IsEscaped(in, linkEnd) {
 			return textEnd, linkEnd
 		}
-		offset = idx + 1
+		offset = linkEnd + 1
 	}
 	return -1, -1
 
