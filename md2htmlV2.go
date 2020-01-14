@@ -135,7 +135,7 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 					content = content[:len(content)-len(cv.SameLineSuffix)]
 				}
 				return out.String() + followT, append([]ButtonV2{{
-					Name:     string(text),
+					Name:     html.UnescapeString(string(text)),
 					Content:  content,
 					SameLine: sameline,
 				}}, followB...)

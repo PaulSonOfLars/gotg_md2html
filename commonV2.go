@@ -59,15 +59,6 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
-var validURLChars = func() map[rune]struct{} {
-	valids := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
-	m := make(map[rune]struct{}, len(valids))
-	for _, x := range []rune(valids) {
-		m[x] = struct{}{}
-	}
-	return m
-}()
-
 func getValidLinkEnd(in []rune) int {
 	offset := 0
 	for offset < len(in) {
@@ -79,13 +70,6 @@ func getValidLinkEnd(in []rune) int {
 		end := offset + idx
 		// validEnd check has double logic to account for multi char strings
 		if validEnd(end, in) && validEnd(end, in) && !IsEscaped(in, end) {
-			// check valid URL
-			for _, c := range in[:end]{
-				// Check if proposed solution has invalids in it. If yes, nothing can fix it.
-				if _, ok := validURLChars[c]; !ok {
-					return -1
-				}
-			}
 			return end
 		}
 		offset = end + 1
