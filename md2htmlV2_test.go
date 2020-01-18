@@ -115,10 +115,10 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			btns: nil,
 		}, {
 			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
-			out: "[hello](buttonurl://test.com)\n",
+			out: "",
 			btns: []ButtonV2{{
-				Name:    "hello2",
-				Content: "test.com",
+				Name:    "hello",
+				Content: "test.com\\)\n[hello2](buttonurl:test.com",
 			}},
 		},
 	} {
