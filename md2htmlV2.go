@@ -61,7 +61,7 @@ func (cv ConverterV2) MD2HTMLButtons(in string) (string, []ButtonV2) {
 
 // TODO: add support for a map-like check of which items cannot be included.
 //  Eg: `code` cannot be italic/bold/underline/strikethrough
-//  howeber... this is currently impletemented by telegram server side, so not my problem :runs:
+//  however... this is currently implemented by server side by telegram, so not my problem :runs:
 func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 	out := strings.Builder{}
 
@@ -109,8 +109,16 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 
 			nStart, nEnd := i+1, i+idx+1
 
-			// internal wont have any interesting item closings
-			nestedT, nestedB := cv.md2html(in[nStart:nEnd], b)
+			var nestedT string
+			var nestedB []ButtonV2
+			if c == '`' {
+				// ` and ``` dont support nested items, so don't parse children.
+				nestedT = string(in[nStart:nEnd])
+			} else {
+				// internal wont have any interesting item closings
+				nestedT, nestedB = cv.md2html(in[nStart:nEnd], b)
+			}
+			// nestedT, nestedB := cv.md2html(in[nStart:nEnd], b)
 			followT, followB := cv.md2html(in[nEnd+len(item):], b)
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + chars[item] + ">" + followT, append(nestedB, followB...)
 

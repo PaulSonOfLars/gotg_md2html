@@ -56,9 +56,11 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			case "s", "strike", "del":
 				out.WriteString("~" + nested + "~")
 			case "code":
-				out.WriteString("`" + nested + "`")
+				// code and pre don't look at nested values, because they're not parsed
+				out.WriteString("`" + string(in[closeTag+1:closingOpen]) + "`")
 			case "pre":
-				out.WriteString("```" + nested + "```")
+				// code and pre don't look at nested values, because they're not parsed
+				out.WriteString("```" + string(in[closeTag+1:closingOpen]) + "```")
 			case "a":
 				if link.MatchString(tagContent) {
 					matches := link.FindStringSubmatch(tagContent)

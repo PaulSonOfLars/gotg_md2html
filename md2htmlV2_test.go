@@ -43,8 +43,9 @@ func TestMD2HTMLV2Basic(t *testing.T) {
 			in:  "____double underline____",
 			out: "<u><u>double underline</u></u>",
 		}, {
+			// pre and code dont support nested, so we dont parse the nested data.
 			in:  "````coded code block````",
-			out: "<pre><code>coded code block</code></pre>",
+			out: "<pre>`coded code block`</pre>",
 		},
 	} {
 		assert.Equal(t, x.out, MD2HTMLV2(x.in))
