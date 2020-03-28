@@ -2,6 +2,7 @@ package tg_md2html
 
 import (
 	"html"
+	"sort"
 	"strings"
 )
 
@@ -49,6 +50,19 @@ var chars = map[string]string{
 	")":   "", // for links
 	"\\":  "", // for escapes
 }
+
+var AllMarkdownV2Chars = func() []rune {
+	var outString []string
+	for k := range chars {
+		outString = append(outString, k)
+	}
+	sort.Strings(outString)
+	var out []rune
+	for _, x := range outString {
+		out = append(out, []rune(x)[0])
+	}
+	return out
+}()
 
 func (cv ConverterV2) MD2HTML(in string) string {
 	text, _ := cv.md2html([]rune(html.EscapeString(in)), false)
@@ -167,4 +181,17 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 	}
 
 	return out.String(), nil
+}
+
+func EscapeMarkdownV2(r []rune) string {
+	out := strings.Builder{}
+	for i, x := range r {
+		if contains(x, AllMarkdownV2Chars) {
+			if i == 0 || i == len(r)-1 || validEnd(i, r) || validStart(i, r) {
+				out.WriteRune('\\')
+			}
+		}
+		out.WriteRune(x)
+	}
+	return out.String()
 }

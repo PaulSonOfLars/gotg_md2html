@@ -3,9 +3,7 @@ package tg_md2html
 import (
 	"fmt"
 	"html"
-	"regexp"
 	"strings"
-	"unicode"
 )
 
 var tagHTML = map[rune]string{
@@ -85,21 +83,6 @@ func (cv *Converter) StripHTML(s string) string {
 	return cv.stripHTML([]rune(s))
 }
 
-func IsEscaped(input []rune, pos int) bool {
-	if pos == 0 {
-		return false
-	}
-
-	i := pos - 1
-	for ; i >= 0; i-- {
-		if input[i] == '\\' {
-			continue
-		}
-		break
-	}
-
-	return (pos-i)%2 == 0
-}
 
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
@@ -284,17 +267,6 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	return strings.TrimSpace(output.String()), btnPairs
 }
 
-func validStart(pos int, input []rune) bool {
-	return (pos == 0 || !(unicode.IsLetter(input[pos-1]) || unicode.IsDigit(input[pos-1]))) && !(pos == len(input)-1 || unicode.IsSpace(input[pos+1]))
-}
-
-func validEnd(pos int, input []rune) bool {
-	return !(pos == 0 || unicode.IsSpace(input[pos-1])) && (pos == len(input)-1 || !(unicode.IsLetter(input[pos+1]) || unicode.IsDigit(input[pos+1])))
-}
-
-// todo: remove regexp dep
-var link = regexp.MustCompile(`a href="(.*)"`)
-
 // NOTE: If this gets edited, make sure to edit the strip() method too
 // TODO: this needs to return string, error to handle bad parsing
 func (cv *Converter) reverse(r []rune, buttons []Button) string {
@@ -443,16 +415,6 @@ func EscapeMarkdown(r []rune, toEscape []rune) string {
 		out.WriteRune(x)
 	}
 	return out.String()
-}
-
-func contains(r rune, rr []rune) bool {
-	for _, x := range rr {
-		if r == x {
-			return true
-		}
-	}
-
-	return false
 }
 
 // debug tools
