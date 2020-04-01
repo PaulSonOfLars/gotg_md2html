@@ -29,6 +29,9 @@ var basicMD = []struct {
 	}, {
 		in:  `_hello\_ there_`,
 		out: "<i>hello_ there</i>",
+	}, {
+		in:  "`code and <brackets>`",
+		out: "<code>code and &lt;brackets&gt;</code>",
 	},
 }
 
@@ -169,6 +172,8 @@ var reverseTest = []string{
 	"\\_test_",
 	"\\\\_test_",
 	"_italics\\_ *maybebold* still italics_",
+	"`code and <brackets>`",
+	"_italics and <brackets>_",
 }
 
 func TestMD2HTMLBasic(t *testing.T) {
