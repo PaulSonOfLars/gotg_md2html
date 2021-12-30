@@ -1,14 +1,16 @@
-package tg_md2html
+package tg_md2html_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	tg_md2html "github.com/PaulSonOfLars/gotg_md2html"
 )
 
 func TestMD2HTMLV2Basic(t *testing.T) {
 	for _, x := range append(basicMD) {
-		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
 	}
 	// new mdv2 stuff
 	for _, x := range []struct {
@@ -21,6 +23,9 @@ func TestMD2HTMLV2Basic(t *testing.T) {
 		}, {
 			in:  "__hello__",
 			out: "<u>hello</u>",
+		}, {
+			in:  "||hello||",
+			out: "<span class=\"tg-spoiler\">hello</span>",
 		}, {
 			in:  "```hello```",
 			out: "<pre>hello</pre>",
@@ -48,13 +53,15 @@ func TestMD2HTMLV2Basic(t *testing.T) {
 			out: "<pre>`coded code block`</pre>",
 		},
 	} {
-		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+		t.Run(x.in, func(t *testing.T) {
+			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		})
 	}
 }
 
 func TestMD2HTMLV2Advanced(t *testing.T) {
 	for _, x := range advancedMD {
-		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
 	}
 }
 
@@ -84,9 +91,14 @@ func TestNotMD2HTMLV2(t *testing.T) {
 		}, {
 			in:  "[hello](test.com)",
 			out: `<a href="test.com">hello</a>`,
+		}, {
+			in:  "||bad spoiler",
+			out: "||bad spoiler",
 		},
 	} {
-		assert.Equal(t, x.out, MD2HTMLV2(x.in))
+		t.Run(x.in, func(t *testing.T) {
+			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		})
 	}
 }
 
@@ -94,19 +106,19 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 	for _, x := range []struct {
 		in   string
 		out  string
-		btns []ButtonV2
+		btns []tg_md2html.ButtonV2
 	}{
 		{
 			in:  "[hello](buttonurl:test.com)",
 			out: "",
-			btns: []ButtonV2{{
+			btns: []tg_md2html.ButtonV2{{
 				Name:    "hello",
 				Content: "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
 			out: "Some text, some <b>bold</b>, and a button ",
-			btns: []ButtonV2{{
+			btns: []tg_md2html.ButtonV2{{
 				Name:    "hello",
 				Content: "test.com",
 			}},
@@ -117,20 +129,22 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 		}, {
 			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
 			out: "",
-			btns: []ButtonV2{{
+			btns: []tg_md2html.ButtonV2{{
 				Name:    "hello",
 				Content: "test.com\\)\n[hello2](buttonurl:test.com",
 			}},
 		},
 	} {
-		txt, b := MD2HTMLButtonsV2(x.in)
-		assert.Equal(t, x.out, txt)
-		assert.ElementsMatch(t, x.btns, b)
+		t.Run(x.in, func(t *testing.T) {
+			txt, b := tg_md2html.MD2HTMLButtonsV2(x.in)
+			assert.Equal(t, x.out, txt)
+			assert.ElementsMatch(t, x.btns, b)
+		})
 	}
 }
 
 func BenchmarkMD2HTMLV2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		v, bs2 = MD2HTMLButtonsV2(message)
+		v, bs2 = tg_md2html.MD2HTMLButtonsV2(message)
 	}
 }

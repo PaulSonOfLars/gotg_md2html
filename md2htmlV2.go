@@ -44,6 +44,8 @@ var chars = map[string]string{
 	"*":   "b",
 	"~":   "s",
 	"__":  "u",
+	"|":   "", // this is a placeholder for || to work
+	"||":  "span class=\"tg-spoiler\"",
 	"[":   "", // for links
 	"]":   "", // for links
 	"(":   "", // for links
@@ -99,9 +101,17 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 		}
 
 		switch c {
-		case '`', '*', '~', '_': // '__' and '```' are included here too
+		case '`', '*', '~', '_', '|': // '||', '__', and '```' are included here too
 			item := string(c)
-			if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
+			if c == '|' && i+1 < len(in) && in[i+1] == '|' { // support ||
+				// if single |, ignore. We only care about double ||
+				if i+1 >= len(in) || in[i+1] != '|' {
+					out.WriteRune(c)
+					continue
+				}
+				item = "||"
+				i++
+			} else if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
 				item = "__"
 				i++
 			} else if c == '`' && i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
@@ -134,7 +144,8 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 			}
 			// nestedT, nestedB := cv.md2html(in[nStart:nEnd], b)
 			followT, followB := cv.md2html(in[nEnd+len(item):], b)
-			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + chars[item] + ">" + followT, append(nestedB, followB...)
+
+			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 
 		case '[':
 			// find ]( and then )
@@ -194,4 +205,15 @@ func EscapeMarkdownV2(r []rune) string {
 		out.WriteRune(x)
 	}
 	return out.String()
+}
+
+// closeSpans gets the correct closing tags for spans.
+// eg: closeSpans("span class=\"tg-spoiler\"") should return just "span"
+// 	   closeSpans("pre") -> returns "pre"
+func closeSpans(s string) string {
+	if !strings.HasPrefix(s, "span") {
+		return s
+	}
+
+	return "span"
 }
