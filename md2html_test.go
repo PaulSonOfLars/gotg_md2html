@@ -176,6 +176,8 @@ var reverseTest = []string{
 	"_italics\\_ *maybebold* still italics_",
 	"`code and <brackets>`",
 	"_italics and <brackets>_",
+	"__strikethrough__", // mdv1 wont parse this, but thats ok
+	"||spoiler||",       // mdv1 wont parse this, but thats ok
 }
 
 func TestMD2HTMLBasic(t *testing.T) {

@@ -61,6 +61,18 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			case "pre":
 				// code and pre don't look at nested values, because they're not parsed
 				out.WriteString("```" + html.UnescapeString(string(in[closeTag+1:closingOpen])) + "```")
+			case "span":
+				// NOTE: All span tags are currently spoiler tags. This may change in the future.
+				if len(tagFields) < 2 {
+					return "", fmt.Errorf("span tag does not have enough fields %q", tagFields)
+				}
+
+				switch spanType := tagFields[1]; spanType {
+				case "class=\"tg-spoiler\"":
+					out.WriteString("||" + html.UnescapeString(string(in[closeTag+1:closingOpen])) + "||")
+				default:
+					return "", fmt.Errorf("unknown tag type %q", spanType)
+				}
 			case "a":
 				if link.MatchString(tagContent) {
 					matches := link.FindStringSubmatch(tagContent)

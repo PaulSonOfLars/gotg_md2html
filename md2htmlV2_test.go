@@ -94,6 +94,9 @@ func TestNotMD2HTMLV2(t *testing.T) {
 		}, {
 			in:  "||bad spoiler",
 			out: "||bad spoiler",
+		}, {
+			in:  "|noop|",
+			out: "|noop|",
 		},
 	} {
 		t.Run(x.in, func(t *testing.T) {

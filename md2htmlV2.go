@@ -103,12 +103,13 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 		switch c {
 		case '`', '*', '~', '_', '|': // '||', '__', and '```' are included here too
 			item := string(c)
-			if c == '|' && i+1 < len(in) && in[i+1] == '|' { // support ||
+			if c == '|' { // support ||
 				// if single |, ignore. We only care about double ||
 				if i+1 >= len(in) || in[i+1] != '|' {
 					out.WriteRune(c)
 					continue
 				}
+
 				item = "||"
 				i++
 			} else if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
