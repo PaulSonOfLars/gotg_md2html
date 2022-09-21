@@ -83,7 +83,6 @@ func (cv *Converter) StripHTML(s string) string {
 	return cv.stripHTML([]rune(s))
 }
 
-
 // todo: ``` support? -> add \n char to md chars and hence on \n, skip
 func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 	var output strings.Builder

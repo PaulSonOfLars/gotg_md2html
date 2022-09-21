@@ -34,7 +34,7 @@ func MD2HTMLV2(in string) string {
 }
 
 func MD2HTMLButtonsV2(in string) (string, []ButtonV2) {
-	return defaultConverterV2.md2html([]rune(html.EscapeString(in)), true)
+	return defaultConverterV2.MD2HTMLButtons(in)
 }
 
 var chars = map[string]string{
@@ -76,8 +76,9 @@ func (cv ConverterV2) MD2HTMLButtons(in string) (string, []ButtonV2) {
 }
 
 // TODO: add support for a map-like check of which items cannot be included.
-//  Eg: `code` cannot be italic/bold/underline/strikethrough
-//  however... this is currently implemented by server side by telegram, so not my problem :runs:
+//
+//	Eg: `code` cannot be italic/bold/underline/strikethrough
+//	however... this is currently implemented by server side by telegram, so not my problem :runs:
 func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 	out := strings.Builder{}
 
@@ -209,8 +210,9 @@ func EscapeMarkdownV2(r []rune) string {
 }
 
 // closeSpans gets the correct closing tags for spans.
-// eg: closeSpans("span class=\"tg-spoiler\"") should return just "span"
-// 	   closeSpans("pre") -> returns "pre"
+// eg:
+// - closeSpans("span class=\"tg-spoiler\"") should return just "span"
+// - closeSpans("pre") -> returns "pre"
 func closeSpans(s string) string {
 	if !strings.HasPrefix(s, "span") {
 		return s
