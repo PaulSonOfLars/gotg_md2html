@@ -77,19 +77,19 @@ func getValidLinkEnd(in []rune) int {
 	return -1
 }
 
-func getTagOpen(in []rune) int {
-	for ix, c := range in {
+func getHTMLTagOpenIndex(in []rune) int {
+	for idx, c := range in {
 		if c == '<' {
-			return ix
+			return idx
 		}
 	}
 	return -1
 }
 
-func getTagClose(in []rune) int {
-	for ix, c := range in {
+func getHTMLTagCloseIndex(in []rune) int {
+	for idx, c := range in {
 		if c == '>' {
-			return ix
+			return idx
 		}
 	}
 	return -1
@@ -106,26 +106,27 @@ func getClosingTag(in []rune, tag string) (int, int) {
 	offset := 0
 	subtags := 0
 	for offset < len(in) {
-		o := getTagOpen(in[offset:])
+		o := getHTMLTagOpenIndex(in[offset:])
 		if o < 0 {
 			return -1, -1
 		}
-		open := offset + o
-		c := getTagClose(in[open+2:])
+		openingTagIdx := offset + o
+
+		c := getHTMLTagCloseIndex(in[openingTagIdx+2:])
 		if c < 0 {
 			return -1, -1
 		}
 
-		close := open + 2 + c
-		if string(in[open+1:close]) == tag { // found a nested tag, this is annoying
+		closingTagIdx := openingTagIdx + 2 + c
+		if string(in[openingTagIdx+1:closingTagIdx]) == tag { // found a nested tag, this is annoying
 			subtags++
-		} else if isClosingTag(in, open) && string(in[open+2:close]) == tag {
+		} else if isClosingTag(in, openingTagIdx) && string(in[openingTagIdx+2:closingTagIdx]) == tag {
 			if subtags == 0 {
-				return open, close
+				return openingTagIdx, closingTagIdx
 			}
 			subtags--
 		}
-		offset = open + 1
+		offset = openingTagIdx + 1
 	}
 	return -1, -1
 }

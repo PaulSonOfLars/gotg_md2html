@@ -36,15 +36,30 @@ func TestReverseV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl://test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Content: "test.com",
+				Name: "hello",
+				URL:  "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button\n[hello](buttonurl://test.com)",
 			out: "Some text, some <b>bold</b>, and a button",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Content: "test.com",
+				Name: "hello",
+				URL:  "test.com",
+			}},
+		}, {
+			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text)",
+			out: "Some text, some <b>bold</b>, and a button",
+			btns: []tg_md2html.ButtonV2{{
+				Name: "hello",
+				Text: "some text",
+			}},
+		}, {
+			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text:same)",
+			out: "Some text, some <b>bold</b>, and a button",
+			btns: []tg_md2html.ButtonV2{{
+				Name:     "hello",
+				Text:     "some text",
+				SameLine: true,
 			}},
 		},
 	} {

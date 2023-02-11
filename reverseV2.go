@@ -1,10 +1,13 @@
 package tg_md2html
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"strings"
 )
+
+var ErrNoButtonContent = errors.New("no button contents")
 
 func ReverseV2(in string, bs []ButtonV2) (string, error) {
 	return defaultConverterV2.Reverse(in, bs)
@@ -20,7 +23,7 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	for i := 0; i < len(in); i++ {
 		switch in[i] {
 		case '<':
-			c := getTagClose(in[i+1:])
+			c := getHTMLTagCloseIndex(in[i+1:])
 			if c < 0 {
 				// "no close tag"
 				return "", fmt.Errorf("no closing '>' for opening bracket at %d", i)
@@ -96,13 +99,27 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	}
 	out.WriteString(html.UnescapeString(string(in[prev:])))
 
-	for _, btn := range buttons {
-		out.WriteString("\n[" + btn.Name + "](" + cv.BtnPrefix + "//" + html.UnescapeString(btn.Content))
-		if btn.SameLine {
-			out.WriteString(cv.SameLineSuffix)
+	for idx, btn := range buttons {
+		bText, err := cv.ButtonToMarkdown(btn)
+		if err != nil {
+			return "", fmt.Errorf("failed to convert button %d (%s) to markdown: %w", idx, btn.Name, err)
 		}
-		out.WriteString(")")
+		out.WriteString("\n" + bText)
 	}
 
 	return out.String(), nil
+}
+
+func (cv ConverterV2) ButtonToMarkdown(btn ButtonV2) (string, error) {
+	sameline := ""
+	if btn.SameLine {
+		sameline = cv.SameLineSuffix
+	}
+
+	if btn.URL != "" {
+		return "[" + btn.Name + "](" + cv.BtnURLPrefix + "//" + html.UnescapeString(btn.URL) + sameline + ")", nil
+	} else if btn.Text != "" {
+		return "[" + btn.Name + "](" + cv.BtnTextPrefix + "//" + html.UnescapeString(btn.Text) + sameline + ")", nil
+	}
+	return "", ErrNoButtonContent
 }

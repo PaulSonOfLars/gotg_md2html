@@ -14,11 +14,12 @@ var tagHTML = map[rune]string{
 
 var allMdChars = []rune{'_', '*', '`', '[', ']', '(', ')', '\\'}
 
-const btnPrefix = "buttonurl:"
+const btnURLPrefix = "buttonurl:"
+const btnTextPrefix = "buttontext:"
 const sameLineSuffix = ":same"
 
 var defaultConverter = Converter{
-	BtnPrefix:      btnPrefix,
+	BtnPrefix:      btnURLPrefix,
 	SameLineSuffix: sameLineSuffix,
 }
 
@@ -35,7 +36,7 @@ type Converter struct {
 
 func New() *Converter {
 	return &Converter{
-		BtnPrefix:      btnPrefix,
+		BtnPrefix:      btnURLPrefix,
 		SameLineSuffix: sameLineSuffix,
 	}
 }

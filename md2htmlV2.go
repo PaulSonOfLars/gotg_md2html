@@ -7,24 +7,29 @@ import (
 )
 
 var defaultConverterV2 = ConverterV2{
-	BtnPrefix:      btnPrefix,
+	BtnURLPrefix:   btnURLPrefix,
+	BtnTextPrefix:  btnTextPrefix,
 	SameLineSuffix: sameLineSuffix,
 }
 
+// ButtonV2 identifies a button. It can contain either a URL, or Text, depending on whether it is a buttonURL: or a buttonText:
 type ButtonV2 struct {
 	Name     string
-	Content  string
+	URL      string
+	Text     string
 	SameLine bool
 }
 
 type ConverterV2 struct {
-	BtnPrefix      string
+	BtnURLPrefix   string
+	BtnTextPrefix  string
 	SameLineSuffix string
 }
 
 func NewV2() *ConverterV2 {
 	return &ConverterV2{
-		BtnPrefix:      btnPrefix,
+		BtnURLPrefix:   btnURLPrefix,
+		BtnTextPrefix:  btnTextPrefix,
 		SameLineSuffix: sameLineSuffix,
 	}
 }
@@ -79,7 +84,7 @@ func (cv ConverterV2) MD2HTMLButtons(in string) (string, []ButtonV2) {
 //
 //	Eg: `code` cannot be italic/bold/underline/strikethrough
 //	however... this is currently implemented by server side by telegram, so not my problem :runs:
-func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
+func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2) {
 	out := strings.Builder{}
 
 	for i := 0; i < len(in); i++ {
@@ -142,10 +147,10 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 				nestedT = string(in[nStart:nEnd])
 			} else {
 				// internal wont have any interesting item closings
-				nestedT, nestedB = cv.md2html(in[nStart:nEnd], b)
+				nestedT, nestedB = cv.md2html(in[nStart:nEnd], enableButtons)
 			}
 			// nestedT, nestedB := cv.md2html(in[nStart:nEnd], b)
-			followT, followB := cv.md2html(in[nEnd+len(item):], b)
+			followT, followB := cv.md2html(in[nEnd+len(item):], enableButtons)
 
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 
@@ -160,20 +165,32 @@ func (cv ConverterV2) md2html(in []rune, b bool) (string, []ButtonV2) {
 			content := string(in[i+linkText+2 : i+linkURL])
 			text := in[i+1 : i+linkText]
 			end := i + linkURL + 1
-			followT, followB := cv.md2html(in[end:], b)
+			followT, followB := cv.md2html(in[end:], enableButtons)
 
-			if b && strings.HasPrefix(content, cv.BtnPrefix) {
-				content = strings.TrimLeft(content[len(cv.BtnPrefix):], "/")
-				sameline := false
-				if strings.HasSuffix(content, cv.SameLineSuffix) {
-					sameline = true
-					content = content[:len(content)-len(cv.SameLineSuffix)]
+			if enableButtons {
+				if strings.HasPrefix(content, cv.BtnURLPrefix) {
+					url := strings.TrimLeft(strings.TrimPrefix(content, cv.BtnURLPrefix), "/")
+					sameline := strings.HasSuffix(url, cv.SameLineSuffix)
+					if sameline {
+						url = strings.TrimSuffix(url, cv.SameLineSuffix)
+					}
+					return out.String() + followT, append([]ButtonV2{{
+						Name:     html.UnescapeString(string(text)),
+						URL:      url,
+						SameLine: sameline,
+					}}, followB...)
+				} else if strings.HasPrefix(content, cv.BtnTextPrefix) {
+					buttonText := strings.TrimLeft(strings.TrimPrefix(content, cv.BtnTextPrefix), "/")
+					sameline := strings.HasSuffix(buttonText, cv.SameLineSuffix)
+					if sameline {
+						buttonText = strings.TrimSuffix(buttonText, cv.SameLineSuffix)
+					}
+					return out.String() + followT, append([]ButtonV2{{
+						Name:     html.UnescapeString(string(text)),
+						Text:     buttonText,
+						SameLine: sameline,
+					}}, followB...)
 				}
-				return out.String() + followT, append([]ButtonV2{{
-					Name:     html.UnescapeString(string(text)),
-					Content:  content,
-					SameLine: sameline,
-				}}, followB...)
 			}
 			nestedT, nestedB := cv.md2html(text, true)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)

@@ -9,9 +9,10 @@ import (
 )
 
 func TestMD2HTMLV2Basic(t *testing.T) {
-	for _, x := range append(basicMD) {
+	for _, x := range basicMD {
 		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
 	}
+
 	// new mdv2 stuff
 	for _, x := range []struct {
 		in  string
@@ -115,15 +116,15 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl:test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Content: "test.com",
+				Name: "hello",
+				URL:  "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
 			out: "Some text, some <b>bold</b>, and a button ",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Content: "test.com",
+				Name: "hello",
+				URL:  "test.com",
 			}},
 		}, {
 			in:   "[hello](buttonurl://test.com\\)",
@@ -133,8 +134,18 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Content: "test.com\\)\n[hello2](buttonurl:test.com",
+				Name: "hello",
+				URL:  "test.com\\)\n[hello2](buttonurl:test.com",
+			}},
+		}, {
+			in:  "[text](buttontext:This is some basic text)\n[hello2](buttonurl:test.com)",
+			out: "\n",
+			btns: []tg_md2html.ButtonV2{{
+				Name: "text",
+				Text: "This is some basic text",
+			}, {
+				Name: "hello2",
+				URL:  "test.com",
 			}},
 		},
 	} {
