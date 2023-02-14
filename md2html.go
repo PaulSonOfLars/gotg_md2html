@@ -1,7 +1,6 @@
 package tg_md2html
 
 import (
-	"fmt"
 	"html"
 	"strings"
 )
@@ -415,27 +414,4 @@ func EscapeMarkdown(r []rune, toEscape []rune) string {
 		out.WriteRune(x)
 	}
 	return out.String()
-}
-
-// debug tools
-func underlinePos(s []rune, ps ...int) {
-	fmt.Println(string(s))
-
-	for idx, _ := range s {
-		if containsInt(idx, ps) {
-			fmt.Print("^")
-		} else {
-			fmt.Print(" ")
-		}
-	}
-	fmt.Println()
-}
-
-func containsInt(i int, is []int) bool {
-	for _, x := range is {
-		if x == i {
-			return true
-		}
-	}
-	return false
 }

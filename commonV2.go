@@ -69,7 +69,7 @@ func getValidLinkEnd(in []rune) int {
 
 		end := offset + idx
 		// validEnd check has double logic to account for multi char strings
-		if validEnd(end, in) && validEnd(end, in) && !IsEscaped(in, end) {
+		if validEnd(end, in) && !IsEscaped(in, end) {
 			return end
 		}
 		offset = end + 1
