@@ -83,6 +83,13 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				} else {
 					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
 				}
+			case "tg-emoji":
+				if customEmoji.MatchString(tagContent) {
+					matches := customEmoji.FindStringSubmatch(tagContent)
+					out.WriteString("![" + nested + "](tg://emoji?id=" + matches[1] + ")")
+				} else {
+					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
+				}
 			default:
 				return "", fmt.Errorf("unknown tag %q", tag)
 			}

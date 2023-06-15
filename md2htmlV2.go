@@ -51,10 +51,11 @@ var chars = map[string]string{
 	"__":  "u",
 	"|":   "", // this is a placeholder for || to work
 	"||":  "span class=\"tg-spoiler\"",
+	"!":   "", // for emoji
 	"[":   "", // for links
-	"]":   "", // for links
-	"(":   "", // for links
-	")":   "", // for links
+	"]":   "", // for links/emoji
+	"(":   "", // for links/emoji
+	")":   "", // for links/emoji
 	"\\":  "", // for escapes
 }
 
@@ -153,18 +154,32 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			followT, followB := cv.md2html(in[nEnd+len(item):], enableButtons)
 
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
-
-		case '[':
-			// find ]( and then )
-			linkText, linkURL := findLinkSections(in[i:])
-			if linkText < 0 || linkURL < 0 {
-				out.WriteRune(c)
+		case '!':
+			if len(in) < i+1 || in[i+1] != '[' {
 				continue
 			}
 
-			content := string(in[i+linkText+2 : i+linkURL])
-			text := in[i+1 : i+linkText]
-			end := i + linkURL + 1
+			ok, text, content, newEnd := getLinkContents(in[i+1:])
+			if !ok {
+				out.WriteRune(c)
+				continue
+			}
+			end := i + 1 + newEnd
+
+			content = strings.TrimPrefix(content, "tg://emoji?id=")
+
+			followT, followB := cv.md2html(in[end:], enableButtons)
+			nestedT, nestedB := cv.md2html(text, true)
+			return out.String() + `<tg-emoji emoji-id="` + content + `">` + nestedT + "</tg-emoji>" + followT, append(nestedB, followB...)
+
+		case '[':
+			ok, text, content, newEnd := getLinkContents(in[i:])
+			if !ok {
+				out.WriteRune(c)
+				continue
+			}
+			end := i + newEnd
+
 			followT, followB := cv.md2html(in[end:], enableButtons)
 
 			if enableButtons {
@@ -192,6 +207,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 					}}, followB...)
 				}
 			}
+
 			nestedT, nestedB := cv.md2html(text, true)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)
 

@@ -8,55 +8,56 @@ import (
 	tg_md2html "github.com/PaulSonOfLars/gotg_md2html"
 )
 
-func TestMD2HTMLV2Basic(t *testing.T) {
-	for _, x := range basicMD {
-		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
-	}
+var basicMDv2 = []struct {
+	in  string
+	out string
+}{
+	{
+		in:  "~hello~",
+		out: "<s>hello</s>",
+	}, {
+		in:  "__hello__",
+		out: "<u>hello</u>",
+	}, {
+		in:  "||hello||",
+		out: "<span class=\"tg-spoiler\">hello</span>",
+	}, {
+		in:  "```hello```",
+		out: "<pre>hello</pre>",
+		// NOTE: Decide on whether this is just a sad casualty of markdown parsing, or if:
+		//  The closing tag should be the last viable part, if in a sequence. (eg 3x'_', last two are underline closes)
+		//  This means that all other nested items of that tag should be escaped, to avoid:
+		//  __underline  __double underline____, which is impossible. The HTML for this should be
+		//  <u>underline __double underline(__)</u>(__) where () are up to opinion.
+		//  Following my opinion, it should be the first.
+	}, {
+		in:  "___italic underline___",
+		out: "<u><i>italic underline</i></u>",
+	}, {
+		in:  "__underline __double____",
+		out: "<u>underline <u>double</u></u>",
+	}, {
+		in:  "__underline \\_\\_not double____",
+		out: "<u>underline __not double__</u>",
+	}, {
+		in:  "____double underline____",
+		out: "<u><u>double underline</u></u>",
+	}, {
+		// pre and code dont support nested, so we dont parse the nested data.
+		in:  "````coded code block````",
+		out: "<pre>`coded code block`</pre>",
+	}, { // ensure that premium stickers can get converted
+		in:  `![👍](tg://emoji?id=5368324170671202286)`,
+		out: `<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>`,
+	}, { // make sure that text finishing with ! doesnt cause an OOB
+		in:  `test !`,
+		out: `test !`,
+	},
+}
 
-	// new mdv2 stuff
-	for _, x := range []struct {
-		in  string
-		out string
-	}{
-		{
-			in:  "~hello~",
-			out: "<s>hello</s>",
-		}, {
-			in:  "__hello__",
-			out: "<u>hello</u>",
-		}, {
-			in:  "||hello||",
-			out: "<span class=\"tg-spoiler\">hello</span>",
-		}, {
-			in:  "```hello```",
-			out: "<pre>hello</pre>",
-			// NOTE: Decide on whether this is just a sad casualty of markdown parsing, or if:
-			//  The closing tag should be the last viable part, if in a sequence. (eg 3x'_', last two are underline closes)
-			//  This means that all other nested items of that tag should be escaped, to avoid:
-			//  __underline  __double underline____, which is impossible. The HTML for this should be
-			//  <u>underline __double underline(__)</u>(__) where () are up to opinion.
-			//  Following my opinion, it should be the first.
-		}, {
-			in:  "___italic underline___",
-			out: "<u><i>italic underline</i></u>",
-		}, {
-			in:  "__underline __double____",
-			out: "<u>underline <u>double</u></u>",
-		}, {
-			in:  "__underline \\_\\_not double____",
-			out: "<u>underline __not double__</u>",
-		}, {
-			in:  "____double underline____",
-			out: "<u><u>double underline</u></u>",
-		}, {
-			// pre and code dont support nested, so we dont parse the nested data.
-			in:  "````coded code block````",
-			out: "<pre>`coded code block`</pre>",
-		},
-	} {
-		t.Run(x.in, func(t *testing.T) {
-			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
-		})
+func TestMD2HTMLV2Basic(t *testing.T) {
+	for _, x := range append(basicMD, basicMDv2...) {
+		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
 	}
 }
 

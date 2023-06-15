@@ -16,9 +16,16 @@ func TestReverseV2(t *testing.T) {
 		assert.Equal(t, tg_md2html.MD2HTMLV2(test), tg_md2html.MD2HTMLV2(out))
 	}
 
+	for _, test := range append(append(basicMD, basicMDv2...), advancedMD...) {
+		out, err := tg_md2html.ReverseV2(tg_md2html.MD2HTMLV2(test.in), nil)
+		assert.NoError(t, err, "Error for:\n%s", test)
+		assert.Equal(t, tg_md2html.MD2HTMLV2(test.in), tg_md2html.MD2HTMLV2(out))
+	}
+
 	for _, test := range []string{
 		"___________test_______",
 		"|||||spoiler|||",
+		`![👍](tg://emoji?id=5368324170671202286)`,
 	} {
 		out, err := tg_md2html.ReverseV2(tg_md2html.MD2HTMLV2(test), nil)
 		assert.NoError(t, err, "Error for:\n%s", test)

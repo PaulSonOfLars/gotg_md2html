@@ -25,6 +25,7 @@ func contains(r rune, rr []rune) bool {
 
 // todo: remove regexp dep
 var link = regexp.MustCompile(`a href="(.*)"`)
+var customEmoji = regexp.MustCompile(`tg-emoji emoji-id="(.*)"`)
 
 func IsEscaped(input []rune, pos int) bool {
 	if pos == 0 {

@@ -1,6 +1,6 @@
 package tg_md2html
 
-func findLinkSections(in []rune) (int, int) {
+func findLinkSectionsIdx(in []rune) (int, int) {
 	var textEnd, linkEnd int
 	var offset int
 	foundTextEnd := false
@@ -33,7 +33,18 @@ func findLinkSections(in []rune) (int, int) {
 		offset = linkEnd + 1
 	}
 	return -1, -1
+}
 
+func getLinkContents(in []rune) (bool, []rune, string, int) {
+	// find ]( and then )
+	linkText, linkURL := findLinkSectionsIdx(in)
+	if linkText < 0 || linkURL < 0 {
+		return false, nil, "", 0
+	}
+
+	content := string(in[linkText+2 : linkURL])
+	text := in[1:linkText]
+	return true, text, content, linkURL + 1
 }
 
 func getValidEnd(in []rune, s string) int {
