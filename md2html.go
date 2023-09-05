@@ -14,7 +14,6 @@ var tagHTML = map[rune]string{
 var allMdChars = []rune{'_', '*', '`', '[', ']', '(', ')', '\\'}
 
 const btnURLPrefix = "buttonurl:"
-const btnTextPrefix = "buttontext:"
 const sameLineSuffix = ":same"
 
 var defaultConverter = Converter{
