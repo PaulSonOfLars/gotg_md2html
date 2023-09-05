@@ -7,29 +7,28 @@ import (
 )
 
 var defaultConverterV2 = ConverterV2{
-	BtnURLPrefix:   btnURLPrefix,
-	BtnTextPrefix:  btnTextPrefix,
+	Prefixes: map[string]string{
+		"url": "buttonurl:",
+	},
 	SameLineSuffix: sameLineSuffix,
 }
 
 // ButtonV2 identifies a button. It can contain either a URL, or Text, depending on whether it is a buttonURL: or a buttonText:
 type ButtonV2 struct {
 	Name     string
-	URL      string
-	Text     string
+	Type     string
+	Content  string
 	SameLine bool
 }
 
 type ConverterV2 struct {
-	BtnURLPrefix   string
-	BtnTextPrefix  string
+	Prefixes       map[string]string
 	SameLineSuffix string
 }
 
-func NewV2() *ConverterV2 {
+func NewV2(prefixes map[string]string) *ConverterV2 {
 	return &ConverterV2{
-		BtnURLPrefix:   btnURLPrefix,
-		BtnTextPrefix:  btnTextPrefix,
+		Prefixes:       prefixes,
 		SameLineSuffix: sameLineSuffix,
 	}
 }
@@ -183,26 +182,20 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			followT, followB := cv.md2html(in[end:], enableButtons)
 
 			if enableButtons {
-				if strings.HasPrefix(content, cv.BtnURLPrefix) {
-					url := strings.TrimLeft(strings.TrimPrefix(content, cv.BtnURLPrefix), "/")
-					sameline := strings.HasSuffix(url, cv.SameLineSuffix)
+				for name, prefix := range cv.Prefixes {
+					if !strings.HasPrefix(content, prefix) {
+						continue
+					}
+
+					content := strings.TrimLeft(strings.TrimPrefix(content, prefix), "/")
+					sameline := strings.HasSuffix(content, cv.SameLineSuffix)
 					if sameline {
-						url = strings.TrimSuffix(url, cv.SameLineSuffix)
+						content = strings.TrimSuffix(content, cv.SameLineSuffix)
 					}
 					return out.String() + followT, append([]ButtonV2{{
 						Name:     html.UnescapeString(string(text)),
-						URL:      url,
-						SameLine: sameline,
-					}}, followB...)
-				} else if strings.HasPrefix(content, cv.BtnTextPrefix) {
-					buttonText := strings.TrimLeft(strings.TrimPrefix(content, cv.BtnTextPrefix), "/")
-					sameline := strings.HasSuffix(buttonText, cv.SameLineSuffix)
-					if sameline {
-						buttonText = strings.TrimSuffix(buttonText, cv.SameLineSuffix)
-					}
-					return out.String() + followT, append([]ButtonV2{{
-						Name:     html.UnescapeString(string(text)),
-						Text:     buttonText,
+						Type:     name,
+						Content:  content,
 						SameLine: sameline,
 					}}, followB...)
 				}

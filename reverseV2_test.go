@@ -43,39 +43,48 @@ func TestReverseV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl://test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				URL:  "test.com",
+				Name:    "hello",
+				Type:    "url",
+				Content: "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button\n[hello](buttonurl://test.com)",
 			out: "Some text, some <b>bold</b>, and a button",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				URL:  "test.com",
+				Name:    "hello",
+				Type:    "url",
+				Content: "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text)",
 			out: "Some text, some <b>bold</b>, and a button",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				Text: "some text",
+				Name:    "hello",
+				Type:    "text",
+				Content: "some text",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text:same)",
 			out: "Some text, some <b>bold</b>, and a button",
 			btns: []tg_md2html.ButtonV2{{
 				Name:     "hello",
-				Text:     "some text",
+				Type:     "text",
+				Content:  "some text",
 				SameLine: true,
 			}},
 		},
 	} {
 
-		txt, b := tg_md2html.MD2HTMLButtonsV2(x.in)
+		cv := tg_md2html.NewV2(map[string]string{
+			"url":  "buttonurl:",
+			"text": "buttontext:",
+		})
+
+		txt, b := cv.MD2HTMLButtons(x.in)
 		txt = strings.TrimSpace(txt)
 		assert.Equal(t, x.out, txt)
 		assert.ElementsMatch(t, x.btns, b)
-		out, err := tg_md2html.ReverseV2(txt, x.btns)
+		out, err := cv.Reverse(txt, x.btns)
 		assert.NoError(t, err, "no error expected")
 		assert.Equal(t, x.in, strings.TrimSpace(out))
 	}

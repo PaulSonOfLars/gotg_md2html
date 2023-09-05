@@ -117,15 +117,17 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl:test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				URL:  "test.com",
+				Name:    "hello",
+				Type:    "url",
+				Content: "test.com",
 			}},
 		}, {
 			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
 			out: "Some text, some <b>bold</b>, and a button ",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				URL:  "test.com",
+				Name:    "hello",
+				Type:    "url",
+				Content: "test.com",
 			}},
 		}, {
 			in:   "[hello](buttonurl://test.com\\)",
@@ -135,23 +137,30 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "hello",
-				URL:  "test.com\\)\n[hello2](buttonurl:test.com",
+				Name:    "hello",
+				Type:    "url",
+				Content: "test.com\\)\n[hello2](buttonurl:test.com",
 			}},
 		}, {
 			in:  "[text](buttontext:This is some basic text)\n[hello2](buttonurl:test.com)",
 			out: "\n",
 			btns: []tg_md2html.ButtonV2{{
-				Name: "text",
-				Text: "This is some basic text",
+				Name:    "text",
+				Type:    "text",
+				Content: "This is some basic text",
 			}, {
-				Name: "hello2",
-				URL:  "test.com",
+				Name:    "hello2",
+				Type:    "url",
+				Content: "test.com",
 			}},
 		},
 	} {
 		t.Run(x.in, func(t *testing.T) {
-			txt, b := tg_md2html.MD2HTMLButtonsV2(x.in)
+			cv := tg_md2html.NewV2(map[string]string{
+				"url":  "buttonurl:",
+				"text": "buttontext:",
+			})
+			txt, b := cv.MD2HTMLButtons(x.in)
 			assert.Equal(t, x.out, txt)
 			assert.ElementsMatch(t, x.btns, b)
 		})

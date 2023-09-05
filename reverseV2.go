@@ -123,10 +123,8 @@ func (cv ConverterV2) ButtonToMarkdown(btn ButtonV2) (string, error) {
 		sameline = cv.SameLineSuffix
 	}
 
-	if btn.URL != "" {
-		return "[" + btn.Name + "](" + cv.BtnURLPrefix + "//" + html.UnescapeString(btn.URL) + sameline + ")", nil
-	} else if btn.Text != "" {
-		return "[" + btn.Name + "](" + cv.BtnTextPrefix + "//" + html.UnescapeString(btn.Text) + sameline + ")", nil
+	if prefix, ok := cv.Prefixes[btn.Type]; ok {
+		return "[" + btn.Name + "](" + prefix + "//" + html.UnescapeString(btn.Content) + sameline + ")", nil
 	}
 	return "", ErrNoButtonContent
 }
