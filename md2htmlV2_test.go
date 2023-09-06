@@ -137,9 +137,9 @@ func TestMD2HTMLV2Buttons(t *testing.T) {
 			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
 			out: "",
 			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
+				Name:    "hello](buttonurl://test.com\\)\n[hello2",
 				Type:    "url",
-				Content: "test.com\\)\n[hello2](buttonurl:test.com",
+				Content: "test.com",
 			}},
 		}, {
 			in:  "[text](buttontext:This is some basic text)\n[hello2](buttonurl:test.com)",

@@ -47,20 +47,32 @@ func findLinkSectionsIdx(in []rune) (int, int) {
 	if linkEnd < 0 {
 		return -1, -1
 	}
+	offsetLinkEnd := textEnd + linkEnd
 
-	return textEnd, linkEnd + textEnd
+	// We've found the first valid "mid" section above; and we've found the "end" section too.
+	// Now, we iterate over the text in between the mid and end sections to see if any other mid sections exist.
+	// If yes, we choose those instead - it would be invalid in a URL anyway.
+	for textEnd < offsetLinkEnd {
+		newTextEnd := findLinkMidSectionIdx(in[textEnd+1 : offsetLinkEnd])
+		if newTextEnd == -1 {
+			break
+		}
+		textEnd = textEnd + newTextEnd + 1
+	}
+
+	return textEnd, offsetLinkEnd
 }
 
 func getLinkContents(in []rune) (bool, []rune, string, int) {
 	// find ]( and then )
-	linkText, linkURL := findLinkSectionsIdx(in)
-	if linkText < 0 || linkURL < 0 {
+	textEnd, urlEnd := findLinkSectionsIdx(in)
+	if textEnd < 0 || urlEnd < 0 {
 		return false, nil, "", 0
 	}
 
-	content := string(in[linkText+2 : linkURL])
-	text := in[1:linkText]
-	return true, text, content, linkURL + 1
+	content := string(in[textEnd+2 : urlEnd])
+	text := in[1:textEnd]
+	return true, text, content, urlEnd + 1
 }
 
 func getValidEnd(in []rune, s string) int {
