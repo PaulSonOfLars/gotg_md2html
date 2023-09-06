@@ -3,7 +3,6 @@ package tg_md2html
 func findLinkSectionsIdx(in []rune) (int, int) {
 	var textEnd, linkEnd int
 	var offset int
-	foundTextEnd := false
 	for offset < len(in) {
 		idx := stringIndex(in[offset:], "](")
 		if idx < 0 {
@@ -11,12 +10,11 @@ func findLinkSectionsIdx(in []rune) (int, int) {
 		}
 		textEnd = offset + idx
 		if !IsEscaped(in, textEnd) {
-			foundTextEnd = true
 			break
 		}
 		offset = textEnd + 1
 	}
-	if !foundTextEnd {
+	if offset >= len(in) {
 		return -1, -1
 	}
 
