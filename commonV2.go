@@ -1,36 +1,54 @@
 package tg_md2html
 
-func findLinkSectionsIdx(in []rune) (int, int) {
-	var textEnd, linkEnd int
+// finds the middle '](' section of in a link markdown
+func findLinkMidSectionIdx(in []rune) int {
+	var textEnd int
 	var offset int
 	for offset < len(in) {
 		idx := stringIndex(in[offset:], "](")
 		if idx < 0 {
-			return -1, -1
+			return -1
 		}
 		textEnd = offset + idx
 		if !IsEscaped(in, textEnd) {
-			break
+			return textEnd
 		}
 		offset = textEnd + 1
 	}
-	if offset >= len(in) {
-		return -1, -1
-	}
+	return -1
+}
 
-	offset = textEnd
+// finds the closing ')' section of in a link markdown
+func findLinkEndSectionIdx(in []rune) int {
+	var linkEnd int
+	var offset int
 	for offset < len(in) {
 		idx := getValidLinkEnd(in[offset:])
 		if idx < 0 {
-			return -1, -1
+			return -1
 		}
 		linkEnd = offset + idx
 		if !IsEscaped(in, linkEnd) {
-			return textEnd, linkEnd
+			return linkEnd
 		}
 		offset = linkEnd + 1
 	}
-	return -1, -1
+	return -1
+}
+
+// finds the middle and closing sections of in a link markdown
+func findLinkSectionsIdx(in []rune) (int, int) {
+	textEnd := findLinkMidSectionIdx(in)
+	if textEnd < 0 {
+		return -1, -1
+	}
+
+	linkEnd := findLinkEndSectionIdx(in[textEnd:])
+	if linkEnd < 0 {
+		return -1, -1
+	}
+
+	return textEnd, linkEnd + textEnd
 }
 
 func getLinkContents(in []rune) (bool, []rune, string, int) {
