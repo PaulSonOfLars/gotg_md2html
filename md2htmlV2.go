@@ -139,19 +139,31 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			}
 
 			nStart, nEnd := i+1, i+idx+1
-
-			var nestedT string
-			var nestedB []ButtonV2
-			if c == '`' {
-				// ` and ``` dont support nested items, so don't parse children.
-				nestedT = string(in[nStart:nEnd])
-			} else {
-				// internal wont have any interesting item closings
-				nestedT, nestedB = cv.md2html(in[nStart:nEnd], enableButtons)
-			}
-			// nestedT, nestedB := cv.md2html(in[nStart:nEnd], b)
 			followT, followB := cv.md2html(in[nEnd+len(item):], enableButtons)
 
+			if item == "`" {
+				// ` doesn't support nested items, so don't parse children.
+				return out.String() + "<code>" + string(in[nStart:nEnd]) + "</code>" + followT, followB
+
+			} else if item == "```" {
+				// ``` doesn't support nested items, so don't parse children.
+				nestedT := string(in[nStart:nEnd])
+
+				// Attempt to extract language details; should only be first line
+				splitLines := strings.Split(nestedT, "\n")
+				if len(splitLines) > 1 {
+					// TODO: How do we decide the language; first word? first line?
+					firstLine := strings.TrimSpace(splitLines[0])
+					if len(firstLine) > 0 && strings.HasPrefix(nestedT, firstLine) {
+						content := strings.TrimPrefix(nestedT, firstLine)
+						return out.String() + "<pre><code class=\"language-" + firstLine + "\">" + content + "</code></pre>" + followT, followB
+					}
+				}
+				return out.String() + "<pre>" + nestedT + "</pre>" + followT, followB
+			}
+
+			// internal won't have any interesting item closings
+			nestedT, nestedB := cv.md2html(in[nStart:nEnd], enableButtons)
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 		case '!':
 			if len(in) < i+1 || in[i+1] != '[' {

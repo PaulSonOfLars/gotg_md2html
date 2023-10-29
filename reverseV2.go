@@ -4,20 +4,23 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"regexp"
 	"strings"
 )
 
 var ErrNoButtonContent = errors.New("no button contents")
 
+var languageCodeblock = regexp.MustCompile(`^(?s)<code class="language-(.*?)">(.*)</code>$`)
+
 func ReverseV2(in string, bs []ButtonV2) (string, error) {
 	return defaultConverterV2.Reverse(in, bs)
 }
 
-func (cv *ConverterV2) Reverse(in string, bs []ButtonV2) (string, error) {
+func (cv ConverterV2) Reverse(in string, bs []ButtonV2) (string, error) {
 	return cv.reverse([]rune(in), bs)
 }
 
-func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
+func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	prev := 0
 	out := strings.Builder{}
 	for i := 0; i < len(in); i++ {
@@ -63,7 +66,16 @@ func (cv *ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				out.WriteString("`" + html.UnescapeString(string(in[closeTag+1:closingOpen])) + "`")
 			case "pre":
 				// code and pre don't look at nested values, because they're not parsed
-				out.WriteString("```" + html.UnescapeString(string(in[closeTag+1:closingOpen])) + "```")
+				content := html.UnescapeString(string(in[closeTag+1 : closingOpen]))
+				m := languageCodeblock.FindStringSubmatch(content)
+				if len(m) > 0 {
+					// This <pre> block contains a <code class...> block; handle the language.
+					lang, code := m[1], m[2]
+					out.WriteString("```" + lang + code + "```")
+				} else {
+					// This is a regular boring pre block
+					out.WriteString("```" + content + "```")
+				}
 			case "span":
 				// NOTE: All span tags are currently spoiler tags. This may change in the future.
 				if len(tagFields) < 2 {

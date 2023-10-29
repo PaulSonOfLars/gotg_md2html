@@ -9,7 +9,7 @@ func StripMDV2(s string) string {
 	return defaultConverterV2.StripMDV2(s)
 }
 
-func (cv *ConverterV2) StripMDV2(s string) string {
+func (cv ConverterV2) StripMDV2(s string) string {
 	text, _ := cv.MD2HTMLButtons(s)
 	return cv.stripHTML([]rune(text))
 }
@@ -18,11 +18,11 @@ func StripHTMLV2(s string) string {
 	return defaultConverterV2.stripHTML([]rune(s))
 }
 
-func (cv *ConverterV2) StripHTMLV2(s string) string {
+func (cv ConverterV2) StripHTMLV2(s string) string {
 	return cv.stripHTML([]rune(s))
 }
 
-func (cv *ConverterV2) stripHTML(in []rune) string {
+func (cv ConverterV2) stripHTML(in []rune) string {
 	out := strings.Builder{}
 	for i := 0; i < len(in); i++ {
 		switch in[i] {
