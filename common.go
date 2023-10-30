@@ -47,7 +47,6 @@ func contains(r rune, rr []rune) bool {
 	return false
 }
 
-// todo: remove regexp dep
 var link = regexp.MustCompile(`a href="(.*)"`)
 var customEmoji = regexp.MustCompile(`tg-emoji emoji-id="(.*)"`)
 

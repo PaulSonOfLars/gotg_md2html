@@ -90,6 +90,8 @@ var skipStarts = map[rune]bool{
 //
 //	Eg: `code` cannot be italic/bold/underline/strikethrough
 //	however... this is currently implemented by server side by telegram, so not my problem :runs:
+//
+// (see notes on: https://core.telegram.org/bots/api#markdownv2-style)
 func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2) {
 	out := strings.Builder{}
 
