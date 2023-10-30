@@ -83,6 +83,7 @@ func (cv ConverterV2) MD2HTMLButtons(in string) (string, []ButtonV2) {
 
 var skipStarts = map[rune]bool{
 	'!': true, // premium emoji
+	'[': true, // links
 }
 
 // TODO: add support for a map-like check of which items cannot be included.

@@ -26,11 +26,11 @@ func findLinkMidSectionIdx(in []rune, emoji bool) int {
 }
 
 // finds the closing ')' section of in a link markdown
-func findLinkEndSectionIdx(in []rune, emoji bool) int {
+func findLinkEndSectionIdx(in []rune) int {
 	var linkEnd int
 	var offset int
 	for offset < len(in) {
-		idx := getValidLinkEnd(in[offset:], emoji)
+		idx := getLinkEnd(in[offset:])
 		if idx < 0 {
 			return -1
 		}
@@ -44,13 +44,13 @@ func findLinkEndSectionIdx(in []rune, emoji bool) int {
 }
 
 // finds the middle and closing sections of in a link markdown
-func findLinkSectionsIdx(in []rune, emoji bool) (int, int) {
-	textEnd := findLinkMidSectionIdx(in, emoji)
+func findLinkSectionsIdx(in []rune, isEmojiLink bool) (int, int) {
+	textEnd := findLinkMidSectionIdx(in, isEmojiLink)
 	if textEnd < 0 {
 		return -1, -1
 	}
 
-	linkEnd := findLinkEndSectionIdx(in[textEnd:], emoji)
+	linkEnd := findLinkEndSectionIdx(in[textEnd:])
 	if linkEnd < 0 {
 		return -1, -1
 	}
@@ -60,7 +60,7 @@ func findLinkSectionsIdx(in []rune, emoji bool) (int, int) {
 	// Now, we iterate over the text in between the mid and end sections to see if any other mid sections exist.
 	// If yes, we choose those instead - it would be invalid in a URL anyway.
 	for textEnd < offsetLinkEnd {
-		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], emoji)
+		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], isEmojiLink)
 		if newTextEnd == -1 {
 			break
 		}
@@ -105,7 +105,7 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
-func getValidLinkEnd(in []rune, musBeValid bool) int {
+func getLinkEnd(in []rune) int {
 	offset := 0
 	for offset < len(in) {
 		idx := stringIndex(in[offset:], ")")
@@ -114,8 +114,8 @@ func getValidLinkEnd(in []rune, musBeValid bool) int {
 		}
 
 		end := offset + idx
-		// validEnd check has double logic to account for multi char strings
-		if (validEnd(end, in) || musBeValid) && !IsEscaped(in, end) {
+		// we don't check validEnd, since links can be inlined
+		if !IsEscaped(in, end) {
 			return end
 		}
 		offset = end + 1
