@@ -43,16 +43,19 @@ var basicMDv2 = []struct {
 		in:  "____double underline____",
 		out: "<u><u>double underline</u></u>",
 	}, {
+		in:  "[hello](test.com)",
+		out: `<a href="test.com">hello</a>`,
+	}, {
+		in:  "inline[url](test.com)test",
+		out: `inline<a href="test.com">url</a>test`,
+	}, {
 		// pre and code dont support nested, so we dont parse the nested data.
 		in:  "````coded code block````",
 		out: "<pre>`coded code block`</pre>",
 	}, { // ensure that premium stickers can get converted
 		in:  `![👍](tg://emoji?id=5368324170671202286)`,
 		out: `<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>`,
-	}, { // make sure that text finishing with ! doesnt cause an OOB
-		in:  `test !`,
-		out: `test !`,
-	},
+	}, {},
 }
 
 func TestMD2HTMLV2Basic(t *testing.T) {
@@ -91,75 +94,156 @@ func TestNotMD2HTMLV2(t *testing.T) {
 			in:  "__hello__there",
 			out: "__hello__there",
 		}, {
-			in:  "[hello](test.com)",
-			out: `<a href="test.com">hello</a>`,
-		}, {
 			in:  "||bad spoiler",
 			out: "||bad spoiler",
 		}, {
 			in:  "|noop|",
 			out: "|noop|",
+		}, {
+			in:  "no premium ! in text", // confirm that a '!' doesnt break premiums
+			out: "no premium ! in text",
+		}, {
+			in:  "no premium!", // confirm that ending with '!' doesn't break premiums
+			out: "no premium!",
+		}, {
+			in:  `test !`, // Also check ' !'
+			out: `test !`,
+		}, {
+			// Premium Emoji matching should be greedy
+			in:  "Some text ![😎](tg://emoji?id=6026150900848923116)andstuckhere![😎](tg://emoji?id=6026150900848923116), more text",
+			out: "Some text <tg-emoji emoji-id=\"6026150900848923116\">😎</tg-emoji>andstuckhere<tg-emoji emoji-id=\"6026150900848923116\">😎</tg-emoji>, more text",
 		},
 	} {
 		t.Run(x.in, func(t *testing.T) {
-			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+			txt := tg_md2html.MD2HTMLV2(x.in)
+			assert.Equal(t, x.out, txt)
 		})
 	}
 }
 
-func TestMD2HTMLV2Buttons(t *testing.T) {
-	for _, x := range []struct {
-		in   string
-		out  string
-		btns []tg_md2html.ButtonV2
-	}{
-		{
-			in:  "[hello](buttonurl:test.com)",
-			out: "",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "url",
-				Content: "test.com",
-			}},
+var md2HTMLV2Buttons = []struct {
+	in   string
+	out  string
+	btns []tg_md2html.ButtonV2
+}{
+	{
+		in:  "[hello](buttonurl:test.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{{
+			Name:    "hello",
+			Type:    "url",
+			Content: "test.com",
+		}},
+	}, {
+		in:  "Some text, some *bold*, and a button\n[hello](buttonurl://test.com)",
+		out: "Some text, some <b>bold</b>, and a button",
+		btns: []tg_md2html.ButtonV2{{
+			Name:    "hello",
+			Type:    "url",
+			Content: "test.com",
+		}},
+	}, {
+		in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text)",
+		out: "Some text, some <b>bold</b>, and a button",
+		btns: []tg_md2html.ButtonV2{{
+			Name:    "hello",
+			Type:    "text",
+			Content: "some text",
+		}},
+	}, {
+		in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text:same)",
+		out: "Some text, some <b>bold</b>, and a button",
+		btns: []tg_md2html.ButtonV2{{
+			Name:     "hello",
+			Type:     "text",
+			Content:  "some text",
+			SameLine: true,
+		}},
+	}, {
+		in:   "[hello](buttonurl://test.com\\)",
+		out:  "[hello](buttonurl://test.com)",
+		btns: nil,
+	}, {
+		in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{{
+			Name:    "hello](buttonurl://test.com)\n[hello2",
+			Type:    "url",
+			Content: "test.com",
+		}},
+	}, {
+		in:  "[text](buttontext:This is some basic text)\n[hello2](buttonurl:test.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{{
+			Name:    "text",
+			Type:    "text",
+			Content: "This is some basic text",
 		}, {
-			in:  "Some text, some *bold*, and a button [hello](buttonurl://test.com)",
-			out: "Some text, some <b>bold</b>, and a button ",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "url",
-				Content: "test.com",
-			}},
-		}, {
-			in:   "[hello](buttonurl://test.com\\)",
-			out:  "[hello](buttonurl://test.com)",
-			btns: nil,
-		}, {
-			in:  "[hello](buttonurl://test.com\\)\n[hello2](buttonurl:test.com)",
-			out: "",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "url",
-				Content: "test.com\\)\n[hello2](buttonurl:test.com",
-			}},
-		}, {
-			in:  "[text](buttontext:This is some basic text)\n[hello2](buttonurl:test.com)",
-			out: "\n",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "text",
-				Type:    "text",
-				Content: "This is some basic text",
-			}, {
-				Name:    "hello2",
-				Type:    "url",
-				Content: "test.com",
-			}},
+			Name:    "hello2",
+			Type:    "url",
+			Content: "test.com",
+		}},
+	}, {
+		// This is not a valid URL
+		in:   "[text](tg://emoji?id=6026150900848923116)",
+		out:  "[text](tg://emoji?id=6026150900848923116)",
+		btns: nil,
+	}, {
+		in:  "Some text [![😎](tg://emoji?id=6026150900848923116) text](buttonurl://example.com)",
+		out: "Some text",
+		btns: []tg_md2html.ButtonV2{
+			{
+				Name:     "😎 text",
+				Type:     "url",
+				Content:  "example.com",
+				SameLine: false,
+			},
 		},
-	} {
+	}, {
+		in:  "[![🌐](tg://emoji?id=5343789187172670307)Website](buttonurl://example.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{
+			{
+				Name:     "🌐Website",
+				Type:     "url",
+				Content:  "example.com",
+				SameLine: false,
+			},
+		},
+	}, {
+		// This one has a space between emoji and website! which causes different output...!
+		in:  "[![🌐](tg://emoji?id=5343789187172670307) Website](buttonurl://example.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{
+			{
+				Name:     "🌐 Website",
+				Type:     "url",
+				Content:  "example.com",
+				SameLine: false,
+			},
+		},
+	}, {
+		// Handle the edge case where people are purposefully trying to break buttons
+		in:  "[![🌐](buttonurl://example.com)",
+		out: "",
+		btns: []tg_md2html.ButtonV2{
+			{
+				Name:     "![🌐",
+				Type:     "url",
+				Content:  "example.com",
+				SameLine: false,
+			},
+		},
+	},
+}
+
+func TestMD2HTMLV2Buttons(t *testing.T) {
+	for _, x := range md2HTMLV2Buttons {
+		cv := tg_md2html.NewV2(map[string]string{
+			"url":  "buttonurl:",
+			"text": "buttontext:",
+		})
 		t.Run(x.in, func(t *testing.T) {
-			cv := tg_md2html.NewV2(map[string]string{
-				"url":  "buttonurl:",
-				"text": "buttontext:",
-			})
 			txt, b := cv.MD2HTMLButtons(x.in)
 			assert.Equal(t, x.out, txt)
 			assert.ElementsMatch(t, x.btns, b)
