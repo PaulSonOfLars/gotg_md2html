@@ -22,15 +22,24 @@ var basicMDv2 = []struct {
 		in:  "||hello||",
 		out: "<span class=\"tg-spoiler\">hello</span>",
 	}, {
-		in:  "```hello```",
-		out: "<pre>hello</pre>",
+		in:  "```content```",
+		out: "<pre>content</pre>",
+	}, {
+		in:  "```code\ncontent```",
+		out: "<pre><code class=\"language-code\">\ncontent</code></pre>",
+	}, {
+		in:  "```spaced words\ncontent```",
+		out: "<pre><code class=\"language-spaced words\">\ncontent</code></pre>",
+	}, {
+		in:  "```quoted\"words\ncontent```",
+		out: "<pre><code class=\"language-quoted&#34;words\">\ncontent</code></pre>",
+	}, {
 		// NOTE: Decide on whether this is just a sad casualty of markdown parsing, or if:
 		//  The closing tag should be the last viable part, if in a sequence. (eg 3x'_', last two are underline closes)
 		//  This means that all other nested items of that tag should be escaped, to avoid:
 		//  __underline  __double underline____, which is impossible. The HTML for this should be
 		//  <u>underline __double underline(__)</u>(__) where () are up to opinion.
 		//  Following my opinion, it should be the first.
-	}, {
 		in:  "___italic underline___",
 		out: "<u><i>italic underline</i></u>",
 	}, {
