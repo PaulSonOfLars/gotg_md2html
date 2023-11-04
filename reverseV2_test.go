@@ -1,7 +1,6 @@
 package tg_md2html_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,58 +33,26 @@ func TestReverseV2(t *testing.T) {
 }
 
 func TestReverseV2Buttons(t *testing.T) {
-	for _, x := range []struct {
-		in   string
-		out  string
-		btns []tg_md2html.ButtonV2
-	}{
-		{
-			in:  "[hello](buttonurl://test.com)",
-			out: "",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "url",
-				Content: "test.com",
-			}},
-		}, {
-			in:  "Some text, some *bold*, and a button\n[hello](buttonurl://test.com)",
-			out: "Some text, some <b>bold</b>, and a button",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "url",
-				Content: "test.com",
-			}},
-		}, {
-			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text)",
-			out: "Some text, some <b>bold</b>, and a button",
-			btns: []tg_md2html.ButtonV2{{
-				Name:    "hello",
-				Type:    "text",
-				Content: "some text",
-			}},
-		}, {
-			in:  "Some text, some *bold*, and a button\n[hello](buttontext://some text:same)",
-			out: "Some text, some <b>bold</b>, and a button",
-			btns: []tg_md2html.ButtonV2{{
-				Name:     "hello",
-				Type:     "text",
-				Content:  "some text",
-				SameLine: true,
-			}},
-		},
-	} {
+	for _, x := range md2HTMLV2Buttons {
+		t.Run(x.in, func(t *testing.T) {
+			cv := tg_md2html.NewV2(map[string]string{
+				"url":  "buttonurl:",
+				"text": "buttontext:",
+			})
 
-		cv := tg_md2html.NewV2(map[string]string{
-			"url":  "buttonurl:",
-			"text": "buttontext:",
+			// Button parsing is lossful; we apply opinionated changes to ensure stability. (eg, strip markdown from button names)
+			// So, we don't compare the reverse to the input.
+			// Instead, we ensure that the parsed input is equal to the parsed reverse.
+			txt, b := cv.MD2HTMLButtons(x.in)
+			assert.Equal(t, x.out, txt)
+			assert.ElementsMatch(t, x.btns, b)
+
+			out, err := cv.Reverse(txt, x.btns)
+			assert.NoError(t, err, "no error expected")
+
+			txt2, b2 := cv.MD2HTMLButtons(out)
+			assert.Equal(t, txt, txt2)
+			assert.ElementsMatch(t, b, b2)
 		})
-
-		txt, b := cv.MD2HTMLButtons(x.in)
-		txt = strings.TrimSpace(txt)
-		assert.Equal(t, x.out, txt)
-		assert.ElementsMatch(t, x.btns, b)
-		out, err := cv.Reverse(txt, x.btns)
-		assert.NoError(t, err, "no error expected")
-		assert.Equal(t, x.in, strings.TrimSpace(out))
 	}
 }

@@ -73,17 +73,25 @@ var AllMarkdownV2Chars = func() []rune {
 
 func (cv ConverterV2) MD2HTML(in string) string {
 	text, _ := cv.md2html([]rune(html.EscapeString(in)), false)
-	return text
+	return strings.TrimSpace(text)
 }
 
 func (cv ConverterV2) MD2HTMLButtons(in string) (string, []ButtonV2) {
-	return cv.md2html([]rune(html.EscapeString(in)), true)
+	text, btns := cv.md2html([]rune(html.EscapeString(in)), true)
+	return strings.TrimSpace(text), btns
+}
+
+var skipStarts = map[rune]bool{
+	'!': true, // premium emoji
+	'[': true, // links
 }
 
 // TODO: add support for a map-like check of which items cannot be included.
 //
 //	Eg: `code` cannot be italic/bold/underline/strikethrough
 //	however... this is currently implemented by server side by telegram, so not my problem :runs:
+//
+// (see notes on: https://core.telegram.org/bots/api#markdownv2-style)
 func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2) {
 	out := strings.Builder{}
 
@@ -94,7 +102,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			continue
 		}
 
-		if !validStart(i, in) {
+		if !validStart(i, in) && !skipStarts[c] {
 			if c == '\\' && i+1 < len(in) {
 				if _, ok := chars[string(in[i+1])]; ok {
 					out.WriteRune(in[i+1])
@@ -165,12 +173,14 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			// internal won't have any interesting item closings
 			nestedT, nestedB := cv.md2html(in[nStart:nEnd], enableButtons)
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
+
 		case '!':
-			if len(in) < i+1 || in[i+1] != '[' {
+			if len(in) <= i+1 || in[i+1] != '[' {
+				out.WriteRune(c)
 				continue
 			}
 
-			ok, text, content, newEnd := getLinkContents(in[i+1:])
+			ok, text, content, newEnd := getLinkContents(in[i+1:], true)
 			if !ok {
 				out.WriteRune(c)
 				continue
@@ -179,12 +189,12 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 
 			content = strings.TrimPrefix(content, "tg://emoji?id=")
 
+			nestedT, nestedB := cv.md2html(text, enableButtons)
 			followT, followB := cv.md2html(in[end:], enableButtons)
-			nestedT, nestedB := cv.md2html(text, true)
 			return out.String() + `<tg-emoji emoji-id="` + content + `">` + nestedT + "</tg-emoji>" + followT, append(nestedB, followB...)
 
 		case '[':
-			ok, text, content, newEnd := getLinkContents(in[i:])
+			ok, text, content, newEnd := getLinkContents(in[i:], false)
 			if !ok {
 				out.WriteRune(c)
 				continue
@@ -194,7 +204,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			followT, followB := cv.md2html(in[end:], enableButtons)
 
 			if enableButtons {
-				for name, prefix := range cv.Prefixes {
+				for buttonType, prefix := range cv.Prefixes {
 					if !strings.HasPrefix(content, prefix) {
 						continue
 					}
@@ -204,16 +214,17 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 					if sameline {
 						content = strings.TrimSuffix(content, cv.SameLineSuffix)
 					}
+					cleanedName := cv.StripMDV2(string(text))
 					return out.String() + followT, append([]ButtonV2{{
-						Name:     html.UnescapeString(string(text)),
-						Type:     name,
+						Name:     html.UnescapeString(cleanedName),
+						Type:     buttonType,
 						Content:  content,
 						SameLine: sameline,
 					}}, followB...)
 				}
 			}
 
-			nestedT, nestedB := cv.md2html(text, true)
+			nestedT, nestedB := cv.md2html(text, enableButtons)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)
 
 		case ']', '(', ')':

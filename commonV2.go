@@ -1,50 +1,85 @@
 package tg_md2html
 
-func findLinkSectionsIdx(in []rune) (int, int) {
-	var textEnd, linkEnd int
+import (
+	"strings"
+)
+
+// finds the middle '](' section of in a link markdown
+func findLinkMidSectionIdx(in []rune, emoji bool) int {
+	var textEnd int
 	var offset int
-	foundTextEnd := false
 	for offset < len(in) {
 		idx := stringIndex(in[offset:], "](")
 		if idx < 0 {
-			return -1, -1
+			return -1
 		}
 		textEnd = offset + idx
 		if !IsEscaped(in, textEnd) {
-			foundTextEnd = true
-			break
+			isEmoji := strings.HasPrefix(string(in[textEnd+2:]), "tg://emoji?id=")
+			if (isEmoji && emoji) || (!isEmoji && !emoji) {
+				return textEnd
+			}
 		}
 		offset = textEnd + 1
 	}
-	if !foundTextEnd {
-		return -1, -1
-	}
+	return -1
+}
 
-	offset = textEnd
+// finds the closing ')' section of in a link markdown
+func findLinkEndSectionIdx(in []rune) int {
+	var linkEnd int
+	var offset int
 	for offset < len(in) {
-		idx := getValidLinkEnd(in[offset:])
+		idx := getLinkEnd(in[offset:])
 		if idx < 0 {
-			return -1, -1
+			return -1
 		}
 		linkEnd = offset + idx
 		if !IsEscaped(in, linkEnd) {
-			return textEnd, linkEnd
+			return linkEnd
 		}
 		offset = linkEnd + 1
 	}
-	return -1, -1
+	return -1
 }
 
-func getLinkContents(in []rune) (bool, []rune, string, int) {
+// finds the middle and closing sections of in a link markdown
+func findLinkSectionsIdx(in []rune, isEmojiLink bool) (int, int) {
+	textEnd := findLinkMidSectionIdx(in, isEmojiLink)
+	if textEnd < 0 {
+		return -1, -1
+	}
+
+	linkEnd := findLinkEndSectionIdx(in[textEnd:])
+	if linkEnd < 0 {
+		return -1, -1
+	}
+	offsetLinkEnd := textEnd + linkEnd
+
+	// We've found the first valid "mid" section above; and we've found the "end" section too.
+	// Now, we iterate over the text in between the mid and end sections to see if any other mid sections exist.
+	// If yes, we choose those instead - it would be invalid in a URL anyway.
+	for textEnd < offsetLinkEnd {
+		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], isEmojiLink)
+		if newTextEnd == -1 {
+			break
+		}
+		textEnd = textEnd + newTextEnd + 1
+	}
+
+	return textEnd, offsetLinkEnd
+}
+
+func getLinkContents(in []rune, emoji bool) (bool, []rune, string, int) {
 	// find ]( and then )
-	linkText, linkURL := findLinkSectionsIdx(in)
-	if linkText < 0 || linkURL < 0 {
+	textEndIdx, urlEndIdx := findLinkSectionsIdx(in, emoji)
+	if textEndIdx < 0 || urlEndIdx < 0 {
 		return false, nil, "", 0
 	}
 
-	content := string(in[linkText+2 : linkURL])
-	text := in[1:linkText]
-	return true, text, content, linkURL + 1
+	content := string(in[textEndIdx+2 : urlEndIdx])
+	text := in[1:textEndIdx]
+	return true, text, content, urlEndIdx + 1
 }
 
 func getValidEnd(in []rune, s string) int {
@@ -70,7 +105,7 @@ func getValidEnd(in []rune, s string) int {
 	return -1
 }
 
-func getValidLinkEnd(in []rune) int {
+func getLinkEnd(in []rune) int {
 	offset := 0
 	for offset < len(in) {
 		idx := stringIndex(in[offset:], ")")
@@ -79,8 +114,8 @@ func getValidLinkEnd(in []rune) int {
 		}
 
 		end := offset + idx
-		// validEnd check has double logic to account for multi char strings
-		if validEnd(end, in) && !IsEscaped(in, end) {
+		// we don't check validEnd, since links can be inlined
+		if !IsEscaped(in, end) {
 			return end
 		}
 		offset = end + 1

@@ -17,7 +17,8 @@ func ReverseV2(in string, bs []ButtonV2) (string, error) {
 }
 
 func (cv ConverterV2) Reverse(in string, bs []ButtonV2) (string, error) {
-	return cv.reverse([]rune(in), bs)
+	text, err := cv.reverse([]rune(in), bs)
+	return strings.TrimSpace(text), err
 }
 
 func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
@@ -136,7 +137,7 @@ func (cv ConverterV2) ButtonToMarkdown(btn ButtonV2) (string, error) {
 	}
 
 	if prefix, ok := cv.Prefixes[btn.Type]; ok {
-		return "[" + btn.Name + "](" + prefix + "//" + html.UnescapeString(btn.Content) + sameline + ")", nil
+		return "[" + EscapeMarkdownV2([]rune(btn.Name)) + "](" + prefix + "//" + html.UnescapeString(btn.Content) + sameline + ")", nil
 	}
 	return "", ErrNoButtonContent
 }
