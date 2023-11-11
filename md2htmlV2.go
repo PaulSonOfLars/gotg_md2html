@@ -163,11 +163,11 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 					// TODO: How do we decide the language; first word? first line?
 					firstLine := strings.TrimSpace(splitLines[0])
 					if len(firstLine) > 0 && strings.HasPrefix(nestedT, firstLine) {
-						content := strings.TrimPrefix(nestedT, firstLine)
+						content := strings.TrimPrefix(nestedT, firstLine+"\n")
 						return out.String() + "<pre><code class=\"language-" + firstLine + "\">" + content + "</code></pre>" + followT, followB
 					}
 				}
-				return out.String() + "<pre>" + nestedT + "</pre>" + followT, followB
+				return out.String() + "<pre>" + strings.TrimPrefix(nestedT, "\n") + "</pre>" + followT, followB
 			}
 
 			// internal won't have any interesting item closings

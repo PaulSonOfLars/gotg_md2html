@@ -26,13 +26,13 @@ var basicMDv2 = []struct {
 		out: "<pre>content</pre>",
 	}, {
 		in:  "```code\ncontent```",
-		out: "<pre><code class=\"language-code\">\ncontent</code></pre>",
+		out: "<pre><code class=\"language-code\">content</code></pre>",
 	}, {
 		in:  "```spaced words\ncontent```",
-		out: "<pre><code class=\"language-spaced words\">\ncontent</code></pre>",
+		out: "<pre><code class=\"language-spaced words\">content</code></pre>",
 	}, {
 		in:  "```quoted\"words\ncontent```",
-		out: "<pre><code class=\"language-quoted&#34;words\">\ncontent</code></pre>",
+		out: "<pre><code class=\"language-quoted&#34;words\">content</code></pre>",
 	}, {
 		// NOTE: Decide on whether this is just a sad casualty of markdown parsing, or if:
 		//  The closing tag should be the last viable part, if in a sequence. (eg 3x'_', last two are underline closes)

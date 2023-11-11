@@ -72,7 +72,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				if len(m) > 0 {
 					// This <pre> block contains a <code class...> block; handle the language.
 					lang, code := m[1], m[2]
-					out.WriteString("```" + lang + code + "```")
+					out.WriteString("```" + lang + "\n" + code + "```")
 				} else {
 					// This is a regular boring pre block
 					out.WriteString("```" + content + "```")
