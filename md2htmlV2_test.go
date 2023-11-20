@@ -64,7 +64,10 @@ var basicMDv2 = []struct {
 	}, { // ensure that premium stickers can get converted
 		in:  `![👍](tg://emoji?id=5368324170671202286)`,
 		out: `<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>`,
-	}, {},
+	}, {
+		in:  "> quote",
+		out: "<blockquote>quote</blockquote>",
+	},
 }
 
 func TestMD2HTMLV2Basic(t *testing.T) {
@@ -243,6 +246,15 @@ var md2HTMLV2Buttons = []struct {
 				SameLine: false,
 			},
 		},
+	}, {
+		in:  "text\n> quote\ntext",
+		out: "text\n<blockquote>quote</blockquote>\ntext",
+	}, {
+		in:  "> `code quote`",
+		out: "<blockquote><code>code quote</code></blockquote>",
+	}, {
+		in:  "```go\ntext\n> not quote\nmore text```",
+		out: "<pre><code class=\"language-go\">text\n&gt; not quote\nmore text</code></pre>",
 	},
 }
 

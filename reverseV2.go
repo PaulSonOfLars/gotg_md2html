@@ -103,6 +103,9 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				} else {
 					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
 				}
+			case "blockquote":
+				out.WriteString("> " + nested)
+
 			default:
 				return "", fmt.Errorf("unknown tag %q", tag)
 			}
