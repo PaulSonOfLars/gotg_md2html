@@ -104,7 +104,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
 				}
 			case "blockquote":
-				out.WriteString("> " + nested)
+				out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
 
 			default:
 				return "", fmt.Errorf("unknown tag %q", tag)
@@ -113,7 +113,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			prev = closingClose + 1
 			i = closingClose
 
-		case '\\', '_', '*', '~', '`', '[', ']', '(', ')': // these all need to be escaped to ensure we retain the same message
+		case '\\', '_', '*', '~', '`', '[', ']', '(', ')', '>': // these all need to be escaped to ensure we retain the same message
 			out.WriteString(html.UnescapeString(string(in[prev:i])))
 			out.WriteRune('\\')
 			out.WriteRune(in[i])

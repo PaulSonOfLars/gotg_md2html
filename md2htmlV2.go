@@ -193,16 +193,30 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			}
 
 			nEnd := len(in)
-			for j := i + 1; j < len(in); j++ {
+			var contents []rune // We store all the contents, minus the > characters, so we avoid double-html tags
+			lineStart := true
+			for j := i + 4; j < len(in); j++ {
+				if lineStart && in[j] == ' ' {
+					// Skip space chars at start of lines
+					continue
+				}
+
+				lineStart = in[j] == '\n'
+				contents = append(contents, in[j])
+
 				if in[j] == '\n' {
+					if j+4 < len(in) && in[j+1] == '&' && in[j+2] == 'g' && in[j+3] == 't' && in[j+4] == ';' {
+						j = j + 4 // skip '>' symbol
+						continue
+					}
 					nEnd = j
 					break
 				}
 			}
 
-			nestedT, nestedB := cv.md2html(in[nStart:nEnd], enableButtons)
+			nestedT, nestedB := cv.md2html(contents, enableButtons)
 			followT, followB := cv.md2html(in[nEnd:], enableButtons)
-			return out.String() + "<blockquote>" + nestedT + "</blockquote>" + followT, append(nestedB, followB...)
+			return out.String() + "<blockquote>" + strings.TrimSpace(nestedT) + "</blockquote>" + followT, append(nestedB, followB...)
 
 		case '!':
 			if len(in) <= i+1 || in[i+1] != '[' {

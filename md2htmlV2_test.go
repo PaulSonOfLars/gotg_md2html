@@ -67,6 +67,9 @@ var basicMDv2 = []struct {
 	}, {
 		in:  "> quote",
 		out: "<blockquote>quote</blockquote>",
+	}, {
+		in:  ">multi\n> line",
+		out: "<blockquote>multi\nline</blockquote>",
 	},
 }
 
