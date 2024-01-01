@@ -4,6 +4,7 @@ import (
 	"html"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 var defaultConverterV2 = ConverterV2{
@@ -42,20 +43,22 @@ func MD2HTMLButtonsV2(in string) (string, []ButtonV2) {
 }
 
 var chars = map[string]string{
-	"`":   "code",
-	"```": "pre",
-	"_":   "i",
-	"*":   "b",
-	"~":   "s",
-	"__":  "u",
-	"|":   "", // this is a placeholder for || to work
-	"||":  "span class=\"tg-spoiler\"",
-	"!":   "", // for emoji
-	"[":   "", // for links
-	"]":   "", // for links/emoji
-	"(":   "", // for links/emoji
-	")":   "", // for links/emoji
-	"\\":  "", // for escapes
+	"`":    "code",
+	"```":  "pre",
+	"_":    "i",
+	"*":    "b",
+	"~":    "s",
+	"__":   "u",
+	"|":    "", // this is a placeholder for || to work
+	"||":   "span class=\"tg-spoiler\"",
+	"!":    "", // for emoji
+	"[":    "", // for links
+	"]":    "", // for links/emoji
+	"(":    "", // for links/emoji
+	")":    "", // for links/emoji
+	"\\":   "", // for escapes
+	"&gt;": "blockquote",
+	"&":    "", // for blockquotes
 }
 
 var AllMarkdownV2Chars = func() []rune {
@@ -174,6 +177,47 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nestedT, nestedB := cv.md2html(in[nStart:nEnd], enableButtons)
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 
+		case '&':
+			if !(i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';') {
+				out.WriteRune(c)
+				continue
+			}
+
+			if !validBlockQuoteStart(in, i) {
+				out.WriteRune(c)
+				continue
+			}
+			nStart := i + 4
+			for unicode.IsSpace(in[nStart]) {
+				nStart++
+			}
+
+			nEnd := len(in)
+			var contents []rune // We store all the contents, minus the > characters, so we avoid double-html tags
+			lineStart := true
+			for j := i + 4; j < len(in); j++ {
+				if lineStart && in[j] == ' ' {
+					// Skip space chars at start of lines
+					continue
+				}
+
+				lineStart = in[j] == '\n'
+				contents = append(contents, in[j])
+
+				if in[j] == '\n' {
+					if j+4 < len(in) && in[j+1] == '&' && in[j+2] == 'g' && in[j+3] == 't' && in[j+4] == ';' {
+						j = j + 4 // skip '>' symbol
+						continue
+					}
+					nEnd = j
+					break
+				}
+			}
+
+			nestedT, nestedB := cv.md2html(contents, enableButtons)
+			followT, followB := cv.md2html(in[nEnd:], enableButtons)
+			return out.String() + "<blockquote>" + strings.TrimSpace(nestedT) + "</blockquote>" + followT, append(nestedB, followB...)
+
 		case '!':
 			if len(in) <= i+1 || in[i+1] != '[' {
 				out.WriteRune(c)
@@ -243,6 +287,20 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 	}
 
 	return out.String(), nil
+}
+
+func validBlockQuoteStart(in []rune, i int) bool {
+	for j := i - 1; j >= 0; j-- {
+		if !unicode.IsSpace(in[j]) {
+			return false
+		}
+		if in[j] == '\n' {
+			return true
+		}
+	}
+
+	// Start of message; must be valid.
+	return true
 }
 
 func EscapeMarkdownV2(r []rune) string {
