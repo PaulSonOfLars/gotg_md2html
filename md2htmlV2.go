@@ -178,7 +178,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 
 		case '&':
-			if !(i+4 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';') {
+			if !(i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';') {
 				out.WriteRune(c)
 				continue
 			}
@@ -187,9 +187,14 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 				out.WriteRune(c)
 				continue
 			}
+
 			nStart := i + 4
-			for unicode.IsSpace(in[nStart]) {
+			for nStart < len(in) && unicode.IsSpace(in[nStart]) {
 				nStart++
+			}
+			if nStart >= len(in) {
+				out.WriteRune(c)
+				continue
 			}
 
 			nEnd := len(in)

@@ -29,7 +29,7 @@ func TestReverseV2(t *testing.T) {
 		"___________test_______",
 		"|||||spoiler|||",
 		"![👍](tg://emoji?id=5368324170671202286)",
-		">",
+		"> ",
 		"test\n>\ntest",
 	} {
 		out, err := tg_md2html.ReverseV2(tg_md2html.MD2HTMLV2(test), nil)
