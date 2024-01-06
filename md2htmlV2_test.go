@@ -115,6 +115,9 @@ func TestNotMD2HTMLV2(t *testing.T) {
 			in:  "|noop|",
 			out: "|noop|",
 		}, {
+			in:  "end with >",
+			out: "end with &gt;",
+		}, {
 			in:  "no premium ! in text", // confirm that a '!' doesnt break premiums
 			out: "no premium ! in text",
 		}, {
