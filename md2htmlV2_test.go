@@ -22,6 +22,9 @@ var basicMDv2 = []struct {
 		in:  "||hello||",
 		out: "<span class=\"tg-spoiler\">hello</span>",
 	}, {
+		in:  "||<hello>||",
+		out: "<span class=\"tg-spoiler\">&lt;hello&gt;</span>",
+	}, {
 		in:  "```content```",
 		out: "<pre>content</pre>",
 	}, {
@@ -75,13 +78,17 @@ var basicMDv2 = []struct {
 
 func TestMD2HTMLV2Basic(t *testing.T) {
 	for _, x := range append(basicMD, basicMDv2...) {
-		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		t.Run(x.in, func(t *testing.T) {
+			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		})
 	}
 }
 
 func TestMD2HTMLV2Advanced(t *testing.T) {
 	for _, x := range advancedMD {
-		assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		t.Run(x.in, func(t *testing.T) {
+			assert.Equal(t, x.out, tg_md2html.MD2HTMLV2(x.in))
+		})
 	}
 }
 

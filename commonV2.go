@@ -148,7 +148,7 @@ func isClosingTag(in []rune, pos int) bool {
 	return false
 }
 
-func getClosingTag(in []rune, tag string) (int, int) {
+func getClosingTag(in []rune, openingTag string, closingTag string) (int, int) {
 	offset := 0
 	subtags := 0
 	for offset < len(in) {
@@ -164,9 +164,9 @@ func getClosingTag(in []rune, tag string) (int, int) {
 		}
 
 		closingTagIdx := openingTagIdx + 2 + c
-		if string(in[openingTagIdx+1:closingTagIdx]) == tag { // found a nested tag, this is annoying
+		if string(in[openingTagIdx+1:closingTagIdx]) == openingTag { // found a nested tag, this is annoying
 			subtags++
-		} else if isClosingTag(in, openingTagIdx) && string(in[openingTagIdx+2:closingTagIdx]) == tag {
+		} else if isClosingTag(in, openingTagIdx) && string(in[openingTagIdx+2:closingTagIdx]) == closingTag {
 			if subtags == 0 {
 				return openingTagIdx, closingTagIdx
 			}

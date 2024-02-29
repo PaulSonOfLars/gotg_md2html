@@ -38,12 +38,12 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 			if len(tagFields) < 1 {
 				return "", fmt.Errorf("no tag name for HTML tag started at %d", i)
 			}
-			tag := tagFields[0]
+			tagType := tagFields[0]
 
-			co, cc := getClosingTag(in[closeTag+1:], tag)
+			co, cc := getClosingTag(in[closeTag+1:], tagContent, tagType)
 			if co < 0 || cc < 0 {
 				// "no closing open"
-				return "", fmt.Errorf("no closing tag for HTML tag %q started at %d", tag, i)
+				return "", fmt.Errorf("no closing tag for HTML tag %q started at %d", tagType, i)
 			}
 			closingOpen, closingClose := closeTag+1+co, closeTag+1+cc
 			out.WriteString(html.UnescapeString(string(in[prev:i])))
@@ -53,7 +53,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				return "", err
 			}
 
-			switch tag {
+			switch tagType {
 			case "b", "strong":
 				out.WriteString("*" + nested + "*")
 			case "i", "em":
@@ -85,9 +85,9 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 
 				switch spanType := tagFields[1]; spanType {
 				case "class=\"tg-spoiler\"":
-					out.WriteString("||" + html.UnescapeString(string(in[closeTag+1:closingOpen])) + "||")
+					out.WriteString("||" + nested + "||")
 				default:
-					return "", fmt.Errorf("unknown tag type %q", spanType)
+					return "", fmt.Errorf("unknown span type %q", spanType)
 				}
 			case "a":
 				if link.MatchString(tagContent) {
@@ -107,7 +107,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
 
 			default:
-				return "", fmt.Errorf("unknown tag %q", tag)
+				return "", fmt.Errorf("unknown tag %q", tagType)
 			}
 
 			prev = closingClose + 1

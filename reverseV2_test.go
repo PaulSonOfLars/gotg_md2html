@@ -20,21 +20,26 @@ func TestReverseV2(t *testing.T) {
 	for _, test := range append(append(basicMD, basicMDv2...), advancedMD...) {
 		t.Run(test.in, func(t *testing.T) {
 			out, err := tg_md2html.ReverseV2(tg_md2html.MD2HTMLV2(test.in), nil)
-			assert.NoError(t, err, "Error for:\n%s", test)
+			assert.NoError(t, err, " Error for:\n%s", test)
 			assert.Equal(t, tg_md2html.MD2HTMLV2(test.in), tg_md2html.MD2HTMLV2(out))
 		})
 	}
 
 	for _, test := range []string{
-		"___________test_______",
-		"|||||spoiler|||",
-		"![👍](tg://emoji?id=5368324170671202286)",
-		"> ",
-		"test\n>\ntest",
+		"___________test_______",                  // uneven underlines
+		"|||||spoiler|||",                         // uneven spoilers
+		"||<spoiler>||",                           // spoilers, but with HTML bits inside
+		"![👍](tg://emoji?id=5368324170671202286)", // premium emoji
+		"> ",             // empty quotes
+		"test\n>\ntest",  // multiline quotes
+		"||||||||| test", // nested spoilers
 	} {
-		out, err := tg_md2html.ReverseV2(tg_md2html.MD2HTMLV2(test), nil)
-		assert.NoError(t, err, "Error for:\n%s", test)
-		assert.Equal(t, tg_md2html.MD2HTMLV2(test), tg_md2html.MD2HTMLV2(out))
+		t.Run(test, func(t *testing.T) {
+			htmlv2 := tg_md2html.MD2HTMLV2(test)
+			out, err := tg_md2html.ReverseV2(htmlv2, nil)
+			assert.NoError(t, err, "Error for:\n%s", test)
+			assert.Equal(t, htmlv2, tg_md2html.MD2HTMLV2(out))
+		})
 	}
 }
 
