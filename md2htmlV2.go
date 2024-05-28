@@ -52,6 +52,7 @@ var chars = map[string]string{
 	"|":      "", // this is a placeholder for || to work
 	"||":     "span class=\"tg-spoiler\"",
 	"!":      "", // for emoji
+	"![":     "", // for emoji
 	"[":      "", // for links
 	"]":      "", // for links/emoji
 	"(":      "", // for links/emoji
@@ -107,32 +108,30 @@ func getItem(in []rune, i int) (string, int, bool) {
 	}
 
 	item := string(c)
-	if c == '|' { // support ||
-		if !(i+1 < len(in) && in[i+1] == '|') {
-			return "", 0, false
-		}
+	if c == '|' &&
+		i+1 < len(in) && in[i+1] == '|' {
 		return "||", 1, true
 
-	} else if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
+	} else if c == '_' &&
+		i+1 < len(in) && in[i+1] == '_' { // support __
 		return "__", 1, true
 
-	} else if c == '`' && i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
+	} else if c == '`' &&
+		i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
 		return "```", 2, true
 
-	} else if c == '&' {
-		if !(i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';') {
-			return "", 0, false
-		}
-		if !validBlockQuoteStart(in, i) {
-			return "", 0, false
-		}
+	} else if c == '&' &&
+		i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';' &&
+		validBlockQuoteStart(in, i) {
 		return "&gt;", 3, true
 
-	} else if c == '*' && i+5 < len(in) && in[i+1] == '*' && in[i+2] == '&' && in[i+3] == 'g' && in[i+4] == 't' && in[i+5] == ';' {
-		if !validBlockQuoteStart(in, i) {
-			return "", 0, false
-		}
+	} else if c == '*' &&
+		i+5 < len(in) && in[i+1] == '*' && in[i+2] == '&' && in[i+3] == 'g' && in[i+4] == 't' && in[i+5] == ';' &&
+		validBlockQuoteStart(in, i) {
 		return "**&gt;", 5, true
+
+	} else if c == '!' && i+1 < len(in) && in[i+1] == '[' {
+		return "![", 1, true
 	}
 
 	return item, 0, true
@@ -148,7 +147,6 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 	out := strings.Builder{}
 
 	for i := 0; i < len(in); i++ {
-		// TODO: Add blockquote handling here too
 		item, offset, ok := getItem(in, i)
 		if !ok {
 			if item == "" {
@@ -162,12 +160,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 
 		switch item {
 		// All cases where start and closing tags are the same.
-		case "`", "*", "~", "_", "|", "```", "||", "__":
-			if i+1 >= len(in) {
-				out.WriteString(item)
-				continue
-			}
-
+		case "`", "*", "~", "_", "```", "||", "__":
 			idx := getValidEnd(in[i+1:], item)
 			if idx < 0 {
 				// not found; write and move on.
@@ -223,19 +216,13 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			}
 			return out.String() + "<blockquote>" + strings.TrimSpace(nestedT) + "</blockquote>" + followT, append(nestedB, followB...)
 
-		case "!":
-			// TODO: Handle this in item selection
-			if len(in) <= i+1 || in[i+1] != '[' {
-				out.WriteString(item)
-				continue
-			}
-
-			ok, text, content, newEnd := getLinkContents(in[i+1:], true)
+		case "![":
+			ok, text, content, newEnd := getLinkContents(in[i:], true)
 			if !ok {
 				out.WriteString(item)
 				continue
 			}
-			end := i + 1 + newEnd
+			end := i + newEnd
 
 			content = strings.TrimPrefix(content, "tg://emoji?id=")
 
@@ -277,9 +264,6 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nestedT, nestedB := cv.md2html(text, enableButtons)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)
 
-		case "]", "(", ")":
-			out.WriteString(item)
-
 		case "\\":
 			if i+1 < len(in) {
 				if _, ok := chars[string(in[i+1])]; ok {
@@ -288,6 +272,9 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 					continue
 				}
 			}
+			out.WriteString(item)
+
+		default:
 			out.WriteString(item)
 		}
 	}
