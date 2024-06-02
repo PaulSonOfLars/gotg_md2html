@@ -104,7 +104,11 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 					return "", fmt.Errorf("badly formatted anchor tag %q", tagContent)
 				}
 			case "blockquote":
-				out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
+				if len(tagFields) == 2 && tagFields[1] == "expandable" {
+					out.WriteString("**>" + strings.Join(strings.Split(nested, "\n"), "\n>") + "||")
+				} else {
+					out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
+				}
 
 			default:
 				return "", fmt.Errorf("unknown tag %q", tagType)

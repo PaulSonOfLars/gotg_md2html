@@ -43,22 +43,24 @@ func MD2HTMLButtonsV2(in string) (string, []ButtonV2) {
 }
 
 var chars = map[string]string{
-	"`":    "code",
-	"```":  "pre",
-	"_":    "i",
-	"*":    "b",
-	"~":    "s",
-	"__":   "u",
-	"|":    "", // this is a placeholder for || to work
-	"||":   "span class=\"tg-spoiler\"",
-	"!":    "", // for emoji
-	"[":    "", // for links
-	"]":    "", // for links/emoji
-	"(":    "", // for links/emoji
-	")":    "", // for links/emoji
-	"\\":   "", // for escapes
-	"&gt;": "blockquote",
-	"&":    "", // for blockquotes
+	"`":      "code",
+	"```":    "pre",
+	"_":      "i",
+	"*":      "b",
+	"~":      "s",
+	"__":     "u",
+	"|":      "", // this is a placeholder for || to work
+	"||":     "span class=\"tg-spoiler\"",
+	"!":      "", // for emoji
+	"![":     "", // for emoji
+	"[":      "", // for links
+	"]":      "", // for links/emoji
+	"(":      "", // for links/emoji
+	")":      "", // for links/emoji
+	"\\":     "", // for escapes
+	"&":      "", // for blockquotes
+	"&gt;":   "blockquote",
+	"**&gt;": "blockquote", // expandable blockquotes
 }
 
 var AllMarkdownV2Chars = func() []rune {
@@ -89,6 +91,52 @@ var skipStarts = map[rune]bool{
 	'[': true, // links
 }
 
+func getItem(in []rune, i int) (string, int, bool) {
+	c := in[i]
+	if _, ok := chars[string(c)]; !ok {
+		return "", 0, false
+	}
+
+	if !validStart(i, in) && !skipStarts[c] {
+		if c == '\\' && i+1 < len(in) {
+			escaped := string(in[i+1])
+			if _, ok := chars[escaped]; ok {
+				return escaped, 1, false
+			}
+		}
+		return "", 0, false
+	}
+
+	item := string(c)
+	if c == '|' &&
+		i+1 < len(in) && in[i+1] == '|' {
+		return "||", 1, true
+
+	} else if c == '_' &&
+		i+1 < len(in) && in[i+1] == '_' { // support __
+		return "__", 1, true
+
+	} else if c == '`' &&
+		i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
+		return "```", 2, true
+
+	} else if c == '&' &&
+		i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';' &&
+		validBlockQuoteStart(in, i) {
+		return "&gt;", 3, true
+
+	} else if c == '*' &&
+		i+5 < len(in) && in[i+1] == '*' && in[i+2] == '&' && in[i+3] == 'g' && in[i+4] == 't' && in[i+5] == ';' &&
+		validBlockQuoteStart(in, i) {
+		return "**&gt;", 5, true
+
+	} else if c == '!' && i+1 < len(in) && in[i+1] == '[' {
+		return "![", 1, true
+	}
+
+	return item, 0, true
+}
+
 // TODO: add support for a map-like check of which items cannot be included.
 //
 //	Eg: `code` cannot be italic/bold/underline/strikethrough
@@ -99,49 +147,20 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 	out := strings.Builder{}
 
 	for i := 0; i < len(in); i++ {
-		c := in[i]
-		if _, ok := chars[string(c)]; !ok {
-			out.WriteRune(c)
+		item, offset, ok := getItem(in, i)
+		if !ok {
+			if item == "" {
+				item = string(in[i])
+			}
+			out.WriteString(item)
+			i += offset
 			continue
 		}
+		i += offset
 
-		if !validStart(i, in) && !skipStarts[c] {
-			if c == '\\' && i+1 < len(in) {
-				if _, ok := chars[string(in[i+1])]; ok {
-					out.WriteRune(in[i+1])
-					i++
-					continue
-				}
-			}
-			out.WriteRune(c)
-			continue
-		}
-
-		switch c {
-		case '`', '*', '~', '_', '|': // '||', '__', and '```' are included here too
-			item := string(c)
-			if c == '|' { // support ||
-				// if single |, ignore. We only care about double ||
-				if i+1 >= len(in) || in[i+1] != '|' {
-					out.WriteRune(c)
-					continue
-				}
-
-				item = "||"
-				i++
-			} else if c == '_' && i+1 < len(in) && in[i+1] == '_' { // support __
-				item = "__"
-				i++
-			} else if c == '`' && i+2 < len(in) && in[i+1] == '`' && in[i+2] == '`' { // support ```
-				item = "```"
-				i += 2
-			}
-
-			if i+1 >= len(in) {
-				out.WriteString(item)
-				continue
-			}
-
+		switch item {
+		// All cases where start and closing tags are the same.
+		case "`", "*", "~", "_", "```", "||", "__":
 			idx := getValidEnd(in[i+1:], item)
 			if idx < 0 {
 				// not found; write and move on.
@@ -177,64 +196,33 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nestedT, nestedB := cv.md2html(in[nStart:nEnd], enableButtons)
 			return out.String() + "<" + chars[item] + ">" + nestedT + "</" + closeSpans(chars[item]) + ">" + followT, append(nestedB, followB...)
 
-		case '&':
-			if !(i+3 < len(in) && in[i+1] == 'g' && in[i+2] == 't' && in[i+3] == ';') {
-				out.WriteRune(c)
-				continue
-			}
-
-			if !validBlockQuoteStart(in, i) {
-				out.WriteRune(c)
-				continue
-			}
-
-			nStart := i + 4
+		case "&gt;", "**&gt;":
+			nStart := i + 1
 			for nStart < len(in) && unicode.IsSpace(in[nStart]) {
 				nStart++
 			}
+
 			if nStart >= len(in) {
-				out.WriteRune(c)
+				out.WriteString(item)
 				continue
 			}
 
-			nEnd := len(in)
-			var contents []rune // We store all the contents, minus the > characters, so we avoid double-html tags
-			lineStart := true
-			for j := i + 4; j < len(in); j++ {
-				if lineStart && in[j] == ' ' {
-					// Skip space chars at start of lines
-					continue
-				}
-
-				lineStart = in[j] == '\n'
-				contents = append(contents, in[j])
-
-				if in[j] == '\n' {
-					if j+4 < len(in) && in[j+1] == '&' && in[j+2] == 'g' && in[j+3] == 't' && in[j+4] == ';' {
-						j = j + 4 // skip '>' symbol
-						continue
-					}
-					nEnd = j
-					break
-				}
-			}
-
+			nEnd, contents := getBlockQuoteEnd(in, nStart, item == "**&gt;")
 			nestedT, nestedB := cv.md2html(contents, enableButtons)
 			followT, followB := cv.md2html(in[nEnd:], enableButtons)
+
+			if item == "**&gt;" {
+				return out.String() + "<blockquote expandable>" + strings.TrimSpace(nestedT) + "</blockquote>" + followT, append(nestedB, followB...)
+			}
 			return out.String() + "<blockquote>" + strings.TrimSpace(nestedT) + "</blockquote>" + followT, append(nestedB, followB...)
 
-		case '!':
-			if len(in) <= i+1 || in[i+1] != '[' {
-				out.WriteRune(c)
-				continue
-			}
-
-			ok, text, content, newEnd := getLinkContents(in[i+1:], true)
+		case "![":
+			ok, text, content, newEnd := getLinkContents(in[i:], true)
 			if !ok {
-				out.WriteRune(c)
+				out.WriteString(item)
 				continue
 			}
-			end := i + 1 + newEnd
+			end := i + newEnd
 
 			content = strings.TrimPrefix(content, "tg://emoji?id=")
 
@@ -242,10 +230,10 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			followT, followB := cv.md2html(in[end:], enableButtons)
 			return out.String() + `<tg-emoji emoji-id="` + content + `">` + nestedT + "</tg-emoji>" + followT, append(nestedB, followB...)
 
-		case '[':
+		case "[":
 			ok, text, content, newEnd := getLinkContents(in[i:], false)
 			if !ok {
-				out.WriteRune(c)
+				out.WriteString(item)
 				continue
 			}
 			end := i + newEnd
@@ -276,10 +264,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nestedT, nestedB := cv.md2html(text, enableButtons)
 			return out.String() + `<a href="` + content + `">` + nestedT + "</a>" + followT, append(nestedB, followB...)
 
-		case ']', '(', ')':
-			out.WriteRune(c)
-
-		case '\\':
+		case "\\":
 			if i+1 < len(in) {
 				if _, ok := chars[string(in[i+1])]; ok {
 					out.WriteRune(in[i+1])
@@ -287,11 +272,53 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 					continue
 				}
 			}
-			out.WriteRune(c)
+			out.WriteString(item)
+
+		default:
+			out.WriteString(item)
 		}
 	}
 
 	return out.String(), nil
+}
+
+func getBlockQuoteEnd(in []rune, nStart int, expandable bool) (int, []rune) {
+	var contents []rune // We store all the contents, minus the > characters, so we avoid double-html tags
+	lineStart := true
+	for j := nStart; j < len(in); j++ {
+		if lineStart && in[j] == ' ' {
+			// Skip space chars at start of lines
+			continue
+		}
+
+		lineStart = in[j] == '\n'
+		contents = append(contents, in[j])
+
+		// Keep skipping until we get a newline
+		if in[j] != '\n' {
+			continue
+		}
+
+		if isExpandableEnd(in, expandable, j) {
+			return j, contents[:len(contents)-3]
+		}
+
+		if j+4 < len(in) && in[j+1] == '&' && in[j+2] == 'g' && in[j+3] == 't' && in[j+4] == ';' {
+			j = j + 4 // skip '>' symbol for the next blockquote start
+			continue
+		}
+		return j, contents
+	}
+
+	if isExpandableEnd(in, expandable, len(in)) {
+		return len(in), contents[:len(contents)-2]
+	}
+
+	return len(in), contents
+}
+
+func isExpandableEnd(in []rune, expandable bool, j int) bool {
+	return expandable && j-2 >= 0 && in[j-1] == '|' && in[j-2] == '|'
 }
 
 func validBlockQuoteStart(in []rune, i int) bool {
