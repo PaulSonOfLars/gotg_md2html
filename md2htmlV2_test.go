@@ -74,11 +74,17 @@ var basicMDv2 = []struct {
 		in:  ">multi\n> line",
 		out: "<blockquote>multi\nline</blockquote>",
 	}, {
-		in:  "**>expandable multi\n>line\n>quote||",
+		in:  ">expandable multi\n>line\n>quote||",
 		out: "<blockquote expandable>expandable multi\nline\nquote</blockquote>",
 	}, {
-		in:  "**>expandable multi\n>line\n>quote||\nMore text on another line",
+		in:  ">expandable multi\n>line\n>quote||\nMore text on another line",
 		out: "<blockquote expandable>expandable multi\nline\nquote</blockquote>\nMore text on another line",
+	}, {
+		in:  "**>expandable multi with star prefix\n>line\n>quote||",
+		out: "<blockquote expandable>expandable multi with star prefix\nline\nquote</blockquote>",
+	}, {
+		in:  ">normal quote\n**>expandable multi\n>idk||",
+		out: "<blockquote>normal quote</blockquote>\n<blockquote expandable>expandable multi\nidk</blockquote>",
 	},
 }
 

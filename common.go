@@ -22,7 +22,7 @@ func validStart(pos int, input []rune) bool {
 }
 
 func validEnd(pos int, input []rune) bool {
-	// First char is not a valid end char.
+	// First char is not a valid end char; we do NOT allow empty entities.
 	// If the end char has a space before it, its not valid either.
 	if pos == 0 || unicode.IsSpace(input[pos-1]) {
 		return false
