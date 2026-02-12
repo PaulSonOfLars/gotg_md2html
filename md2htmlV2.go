@@ -9,17 +9,29 @@ import (
 
 var defaultConverterV2 = ConverterV2{
 	Prefixes: map[string]string{
-		"url": "buttonurl:",
+		"url": "buttonurl",
 	},
 	SameLineSuffix: sameLineSuffix,
 }
 
-// ButtonV2 identifies a button. It can contain either a URL, or Text, depending on whether it is a buttonURL: or a buttonText:
+// ButtonV2 identifies a button.
+// The markdown syntax for a button is as such (where <> represents fields)
+// [<name>](<prefix>:<content>)
+// [<name>](<prefix>:<content>:<sameline>)
+// [<name>](<prefix>#<style>:<content>)
+// [<name>](<prefix>#<style>:<content>:<sameline>)
 type ButtonV2 struct {
-	Name     string
-	Type     string
-	Content  string
+	// Name of the button, defined by the user inside the []
+	Name string
+	// The type of the button - as determined by the "prefixes" in ConverterV2
+	Type string
+	// The content of the button; a url, text, etc.
+	Content string
+	// Whether the button should be on the same line as the previous one.
 	SameLine bool
+	// According to telegram, one of: "danger" (red), "success" (green), or "primary" (blue).
+	// https://core.telegram.org/bots/api#keyboardbutton
+	Style string
 }
 
 type ConverterV2 struct {
@@ -28,8 +40,13 @@ type ConverterV2 struct {
 }
 
 func NewV2(prefixes map[string]string) *ConverterV2 {
+	cleanPref := make(map[string]string)
+	for k, v := range prefixes {
+		cleanPref[k] = strings.TrimSuffix(v, ":")
+	}
+
 	return &ConverterV2{
-		Prefixes:       prefixes,
+		Prefixes:       cleanPref,
 		SameLineSuffix: sameLineSuffix,
 	}
 }
@@ -242,11 +259,22 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 
 			if enableButtons {
 				for buttonType, prefix := range cv.Prefixes {
-					if !strings.HasPrefix(content, prefix) {
+					pref, url, ok := strings.Cut(content, ":")
+					if !ok {
 						continue
 					}
 
-					content := strings.TrimLeft(strings.TrimPrefix(content, prefix), "/")
+					var style string
+					if p, s, ok := strings.Cut(pref, "#"); ok {
+						style = s
+						pref = p
+					}
+
+					if pref != prefix {
+						continue
+					}
+
+					content := strings.TrimLeft(url, "/")
 					sameline := strings.HasSuffix(content, cv.SameLineSuffix)
 					if sameline {
 						content = strings.TrimSuffix(content, cv.SameLineSuffix)
@@ -257,6 +285,7 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 						Type:     buttonType,
 						Content:  content,
 						SameLine: sameline,
+						Style:    style,
 					}}, followB...)
 				}
 			}

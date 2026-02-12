@@ -144,7 +144,11 @@ func (cv ConverterV2) ButtonToMarkdown(btn ButtonV2) (string, error) {
 	}
 
 	if prefix, ok := cv.Prefixes[btn.Type]; ok {
-		return "[" + EscapeMarkdownV2([]rune(btn.Name)) + "](" + prefix + "//" + html.UnescapeString(btn.Content) + sameline + ")", nil
+		if btn.Style != "" {
+			prefix += "#" + btn.Style
+		}
+
+		return "[" + EscapeMarkdownV2([]rune(btn.Name)) + "](" + prefix + "://" + html.UnescapeString(btn.Content) + sameline + ")", nil
 	}
 	return "", ErrNoButtonContent
 }
