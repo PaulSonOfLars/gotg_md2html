@@ -11,6 +11,11 @@ var defaultConverterV2 = ConverterV2{
 	Prefixes: map[string]string{
 		"url": "buttonurl",
 	},
+	Styles: map[string]string{
+		"primary": "primary",
+		"success": "success",
+		"danger":  "danger",
+	},
 	SameLineSuffix: sameLineSuffix,
 }
 
@@ -35,11 +40,17 @@ type ButtonV2 struct {
 }
 
 type ConverterV2 struct {
-	Prefixes       map[string]string
+	// Prefixes determines how to map button types to button prefixes.
+	// Eg; "url": "buttonurl" creates a URL button when the prefix is "buttonurl"
+	Prefixes map[string]string
+	// Styles determines how to map style names to the relevant telegram value.
+	// Eg: "primary": "primary" just enabled "primary" style.
+	// Eg: "green": "success" would allow users to use "green" as an alias for "success"
+	Styles         map[string]string
 	SameLineSuffix string
 }
 
-func NewV2(prefixes map[string]string) *ConverterV2 {
+func NewV2(prefixes map[string]string, styles map[string]string) *ConverterV2 {
 	cleanPref := make(map[string]string)
 	for k, v := range prefixes {
 		cleanPref[k] = strings.TrimSuffix(v, ":")
@@ -47,6 +58,7 @@ func NewV2(prefixes map[string]string) *ConverterV2 {
 
 	return &ConverterV2{
 		Prefixes:       cleanPref,
+		Styles:         styles,
 		SameLineSuffix: sameLineSuffix,
 	}
 }

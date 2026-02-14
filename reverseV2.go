@@ -4,11 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 )
 
-var ErrNoButtonContent = errors.New("no button contents")
+var (
+	ErrNoButtonContent    = errors.New("missing button name or contents")
+	ErrInvalidButtonStyle = errors.New("invalid button style")
+)
 
 var languageCodeblock = regexp.MustCompile(`^(?s)<code class="language-(.*?)">(.*)</code>$`)
 
@@ -143,12 +148,21 @@ func (cv ConverterV2) ButtonToMarkdown(btn ButtonV2) (string, error) {
 		sameline = cv.SameLineSuffix
 	}
 
-	if prefix, ok := cv.Prefixes[btn.Type]; ok {
-		if btn.Style != "" {
-			prefix += "#" + btn.Style
+	prefix, ok := cv.Prefixes[btn.Type]
+	if !ok || btn.Name == "" || btn.Content == "" {
+		return "", ErrNoButtonContent
+	}
+
+	if btn.Style != "" {
+		trn, ok := cv.Styles[btn.Style]
+		if !ok {
+			return "", fmt.Errorf("%w: %s (expected one of: %s)",
+				ErrInvalidButtonStyle, btn.Style,
+				strings.Join(slices.Collect(maps.Keys(cv.Styles)), ", "))
 		}
 
-		return "[" + EscapeMarkdownV2([]rune(btn.Name)) + "](" + prefix + "://" + html.UnescapeString(btn.Content) + sameline + ")", nil
+		prefix += "#" + trn
 	}
-	return "", ErrNoButtonContent
+
+	return "[" + EscapeMarkdownV2([]rune(btn.Name)) + "](" + prefix + "://" + html.UnescapeString(btn.Content) + sameline + ")", nil
 }

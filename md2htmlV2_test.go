@@ -281,24 +281,35 @@ var md2HTMLV2Buttons = []struct {
 		in:  "```go\ntext\n> not quote\nmore text```",
 		out: "<pre><code class=\"language-go\">text\n&gt; not quote\nmore text</code></pre>",
 	}, {
-		in:  "[text](buttonurl#green://example.com)",
+		in: `[text](buttonurl#primary://example.com)
+[text](buttonurl#success://example.com)
+[text](buttonurl#danger://example.com)`,
 		out: "",
 		btns: []tg_md2html.ButtonV2{{
 			Name:     "text",
 			Type:     "url",
 			Content:  "example.com",
 			SameLine: false,
-			Style:    "green",
+			Style:    "primary",
+		}, {
+			Name:     "text",
+			Type:     "url",
+			Content:  "example.com",
+			SameLine: false,
+			Style:    "success",
+		}, {
+			Name:     "text",
+			Type:     "url",
+			Content:  "example.com",
+			SameLine: false,
+			Style:    "danger",
 		}},
 	},
 }
 
 func TestMD2HTMLV2Buttons(t *testing.T) {
 	for _, x := range md2HTMLV2Buttons {
-		cv := tg_md2html.NewV2(map[string]string{
-			"url":  "buttonurl:",
-			"text": "buttontext:",
-		})
+		cv := testConverter()
 		t.Run(x.in, func(t *testing.T) {
 			txt, b := cv.MD2HTMLButtons(x.in)
 			assert.Equal(t, x.out, txt)

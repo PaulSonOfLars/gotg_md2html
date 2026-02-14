@@ -46,10 +46,7 @@ func TestReverseV2(t *testing.T) {
 func TestReverseV2Buttons(t *testing.T) {
 	for _, x := range md2HTMLV2Buttons {
 		t.Run(x.in, func(t *testing.T) {
-			cv := tg_md2html.NewV2(map[string]string{
-				"url":  "buttonurl:",
-				"text": "buttontext:",
-			})
+			cv := testConverter()
 
 			// Button parsing is lossful; we apply opinionated changes to ensure stability. (eg, strip markdown from button names)
 			// So, we don't compare the reverse to the input.
@@ -64,6 +61,47 @@ func TestReverseV2Buttons(t *testing.T) {
 			txt2, b2 := cv.MD2HTMLButtons(out)
 			assert.Equal(t, txt, txt2)
 			assert.ElementsMatch(t, b, b2)
+		})
+	}
+}
+
+func TestReverseV2Buttons_errors(t *testing.T) {
+	for _, x := range []struct {
+		name    string
+		in      string
+		wantErr error
+	}{
+		{
+			name:    "valid button",
+			in:      "[test](buttonurl://example.com)",
+			wantErr: nil,
+		}, {
+			name:    "empty button name",
+			in:      "[](buttonurl://example.com)",
+			wantErr: tg_md2html.ErrNoButtonContent,
+		}, {
+			name:    "empty button url",
+			in:      "[test](buttonurl://)",
+			wantErr: tg_md2html.ErrNoButtonContent,
+		}, {
+			name:    "valid button style",
+			in:      "[test](buttonurl#primary://blah)",
+			wantErr: nil,
+		}, {
+			name:    "invalid button style",
+			in:      "[test](buttonurl#green://blah)",
+			wantErr: tg_md2html.ErrInvalidButtonStyle,
+		},
+	} {
+		t.Run(x.name, func(t *testing.T) {
+			cv := testConverter()
+
+			// Button parsing is lossful; we apply opinionated changes to ensure stability. (eg, strip markdown from button names)
+			// So, we don't compare the reverse to the input.
+			// Instead, we ensure that the parsed input is equal to the parsed reverse.
+			txt, b := cv.MD2HTMLButtons(x.in)
+			_, err := cv.Reverse(txt, b)
+			assert.ErrorIs(t, err, x.wantErr)
 		})
 	}
 }
