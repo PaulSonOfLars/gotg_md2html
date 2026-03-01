@@ -49,6 +49,7 @@ func contains(r rune, rr []rune) bool {
 
 var link = regexp.MustCompile(`a href="(.*)"`)
 var customEmoji = regexp.MustCompile(`tg-emoji emoji-id="(.*)"`)
+var timestamp = regexp.MustCompile(`tg-time (?:(unix)=(\d+) ?|(format)=(\w+)){1,2}`)
 
 func IsEscaped(input []rune, pos int) bool {
 	if pos == 0 {

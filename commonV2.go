@@ -5,7 +5,7 @@ import (
 )
 
 // finds the middle '](' section of in a link markdown
-func findLinkMidSectionIdx(in []rune, emoji bool) int {
+func findLinkMidSectionIdx(in []rune, tgInternal bool) int {
 	var textEnd int
 	var offset int
 	for offset < len(in) {
@@ -15,8 +15,8 @@ func findLinkMidSectionIdx(in []rune, emoji bool) int {
 		}
 		textEnd = offset + idx
 		if !IsEscaped(in, textEnd) {
-			isEmoji := strings.HasPrefix(string(in[textEnd+2:]), "tg://emoji?id=")
-			if (isEmoji && emoji) || (!isEmoji && !emoji) {
+			isTgInternal := strings.HasPrefix(string(in[textEnd+2:]), "tg://")
+			if (isTgInternal && tgInternal) || (!isTgInternal && !tgInternal) {
 				return textEnd
 			}
 		}
@@ -44,8 +44,8 @@ func findLinkEndSectionIdx(in []rune) int {
 }
 
 // finds the middle and closing sections of in a link markdown
-func findLinkSectionsIdx(in []rune, isEmojiLink bool) (int, int) {
-	textEnd := findLinkMidSectionIdx(in, isEmojiLink)
+func findLinkSectionsIdx(in []rune, isTgInternal bool) (int, int) {
+	textEnd := findLinkMidSectionIdx(in, isTgInternal)
 	if textEnd < 0 {
 		return -1, -1
 	}
@@ -60,7 +60,7 @@ func findLinkSectionsIdx(in []rune, isEmojiLink bool) (int, int) {
 	// Now, we iterate over the text in between the mid and end sections to see if any other mid sections exist.
 	// If yes, we choose those instead - it would be invalid in a URL anyway.
 	for textEnd < offsetLinkEnd {
-		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], isEmojiLink)
+		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], isTgInternal)
 		if newTextEnd == -1 {
 			break
 		}
@@ -70,9 +70,9 @@ func findLinkSectionsIdx(in []rune, isEmojiLink bool) (int, int) {
 	return textEnd, offsetLinkEnd
 }
 
-func getLinkContents(in []rune, emoji bool) (bool, []rune, string, int) {
+func getLinkContents(in []rune, tgLink bool) (bool, []rune, string, int) {
 	// find ]( and then )
-	textEndIdx, urlEndIdx := findLinkSectionsIdx(in, emoji)
+	textEndIdx, urlEndIdx := findLinkSectionsIdx(in, tgLink)
 	if textEndIdx < 0 || urlEndIdx < 0 {
 		return false, nil, "", 0
 	}

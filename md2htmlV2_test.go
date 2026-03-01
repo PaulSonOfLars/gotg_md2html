@@ -67,6 +67,18 @@ var basicMDv2 = []struct {
 	}, { // ensure that premium stickers can get converted
 		in:  `![👍](tg://emoji?id=5368324170671202286)`,
 		out: `<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>`,
+	}, { // ensure that timestamps can get converted
+		in:  `![22:45 tomorrow](tg://time?unix=1647531900&format=wDT)`,
+		out: `<tg-time unix="1647531900" format="wDT">22:45 tomorrow</tg-time>`,
+	}, { // ensure that timestamps can get converted
+		in:  `![22:45 tomorrow](tg://time?unix=1647531900&format=t)`,
+		out: `<tg-time unix="1647531900" format="t">22:45 tomorrow</tg-time>`,
+	}, { // ensure that timestamps can get converted
+		in:  `![22:45 tomorrow](tg://time?unix=1647531900&format=r)`,
+		out: `<tg-time unix="1647531900" format="r">22:45 tomorrow</tg-time>`,
+	}, { // ensure that timestamps can get converted
+		in:  `![22:45 tomorrow](tg://time?unix=1647531900)`,
+		out: `<tg-time unix="1647531900">22:45 tomorrow</tg-time>`,
 	}, {
 		in:  "> quote",
 		out: "<blockquote>quote</blockquote>",

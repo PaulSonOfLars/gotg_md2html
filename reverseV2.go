@@ -7,6 +7,7 @@ import (
 	"maps"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -113,6 +114,31 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 					out.WriteString("**>" + strings.Join(strings.Split(nested, "\n"), "\n>") + "||")
 				} else {
 					out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
+				}
+			case "tg-time":
+				var unix, format string
+				for _, tag := range tagFields[1:] {
+					fieldType, valueQuoted, ok := strings.Cut(tag, "=")
+					if !ok {
+						return "", fmt.Errorf("badly formatted tag %q", tag)
+					}
+
+					value, err := strconv.Unquote(valueQuoted)
+					if err != nil {
+						return "", fmt.Errorf("badly formatted tag %q", tag)
+					}
+
+					switch fieldType {
+					case "unix":
+						unix = value
+					case "format":
+						format = value
+					}
+				}
+				if format != "" {
+					out.WriteString("![" + nested + "](tg://time?unix=" + unix + "&format=" + format + ")")
+				} else {
+					out.WriteString("![" + nested + "](tg://time?unix=" + unix + ")")
 				}
 
 			default:
