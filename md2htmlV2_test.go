@@ -97,6 +97,9 @@ var basicMDv2 = []struct {
 	}, {
 		in:  ">normal quote\n**>expandable multi\n>idk||",
 		out: "<blockquote>normal quote</blockquote>\n<blockquote expandable>expandable multi\nidk</blockquote>",
+	}, {
+		in:  "[test](tg://user?id=1234)",
+		out: `<a href="tg://user?id=1234">test</a>`,
 	},
 }
 

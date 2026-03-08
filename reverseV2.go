@@ -160,7 +160,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	for idx, btn := range buttons {
 		bText, err := cv.ButtonToMarkdown(btn)
 		if err != nil {
-			return "", fmt.Errorf("failed to convert button %d (%s) to markdown: %w", idx, btn.Name, err)
+			return "", fmt.Errorf("invalid button %d (%s): %w", idx, btn.Name, err)
 		}
 		out.WriteString("\n" + bText)
 	}

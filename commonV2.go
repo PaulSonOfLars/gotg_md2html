@@ -4,8 +4,22 @@ import (
 	"strings"
 )
 
+func hasPrefix(s string, tgPrefixes []string) bool {
+	rest, ok := strings.CutPrefix(s, "tg://")
+	if !ok {
+		return false
+	}
+
+	for _, prefix := range tgPrefixes {
+		if strings.HasPrefix(rest, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // finds the middle '](' section of in a link markdown
-func findLinkMidSectionIdx(in []rune, tgInternal bool) int {
+func findLinkMidSectionIdx(in []rune, tgSpecial bool) int {
 	var textEnd int
 	var offset int
 	for offset < len(in) {
@@ -15,8 +29,8 @@ func findLinkMidSectionIdx(in []rune, tgInternal bool) int {
 		}
 		textEnd = offset + idx
 		if !IsEscaped(in, textEnd) {
-			isTgInternal := strings.HasPrefix(string(in[textEnd+2:]), "tg://")
-			if (isTgInternal && tgInternal) || (!isTgInternal && !tgInternal) {
+			prefixed := hasPrefix(string(in[textEnd+2:]), []string{"emoji?", "time?"})
+			if (prefixed && tgSpecial) || (!prefixed && !tgSpecial) {
 				return textEnd
 			}
 		}
@@ -44,8 +58,8 @@ func findLinkEndSectionIdx(in []rune) int {
 }
 
 // finds the middle and closing sections of in a link markdown
-func findLinkSectionsIdx(in []rune, isTgInternal bool) (int, int) {
-	textEnd := findLinkMidSectionIdx(in, isTgInternal)
+func findLinkSectionsIdx(in []rune, tgSpecial bool) (int, int) {
+	textEnd := findLinkMidSectionIdx(in, tgSpecial)
 	if textEnd < 0 {
 		return -1, -1
 	}
@@ -60,7 +74,7 @@ func findLinkSectionsIdx(in []rune, isTgInternal bool) (int, int) {
 	// Now, we iterate over the text in between the mid and end sections to see if any other mid sections exist.
 	// If yes, we choose those instead - it would be invalid in a URL anyway.
 	for textEnd < offsetLinkEnd {
-		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], isTgInternal)
+		newTextEnd := findLinkMidSectionIdx(in[textEnd+1:offsetLinkEnd], tgSpecial)
 		if newTextEnd == -1 {
 			break
 		}
@@ -70,9 +84,9 @@ func findLinkSectionsIdx(in []rune, isTgInternal bool) (int, int) {
 	return textEnd, offsetLinkEnd
 }
 
-func getLinkContents(in []rune, tgLink bool) (bool, []rune, string, int) {
+func getLinkContents(in []rune, tgSpecial bool) (bool, []rune, string, int) {
 	// find ]( and then )
-	textEndIdx, urlEndIdx := findLinkSectionsIdx(in, tgLink)
+	textEndIdx, urlEndIdx := findLinkSectionsIdx(in, tgSpecial)
 	if textEndIdx < 0 || urlEndIdx < 0 {
 		return false, nil, "", 0
 	}
