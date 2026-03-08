@@ -18,7 +18,7 @@ func validStart(pos int, input []rune) bool {
 	}
 
 	// If the previous char is alphanumeric, it is an invalid start char.
-	return !(unicode.IsLetter(input[pos-1]) || unicode.IsDigit(input[pos-1]))
+	return !unicode.IsLetter(input[pos-1]) && !unicode.IsDigit(input[pos-1])
 }
 
 func validEnd(pos int, input []rune) bool {
@@ -34,7 +34,7 @@ func validEnd(pos int, input []rune) bool {
 	}
 
 	// If the next char is alphanumeric, it is an invalid end char.
-	return !(unicode.IsLetter(input[pos+1]) || unicode.IsDigit(input[pos+1]))
+	return !unicode.IsLetter(input[pos+1]) && !unicode.IsDigit(input[pos+1])
 }
 
 func contains(r rune, rr []rune) bool {
@@ -49,7 +49,6 @@ func contains(r rune, rr []rune) bool {
 
 var link = regexp.MustCompile(`a href="(.*)"`)
 var customEmoji = regexp.MustCompile(`tg-emoji emoji-id="(.*)"`)
-var timestamp = regexp.MustCompile(`tg-time (?:(unix)=(\d+) ?|(format)=(\w+)){1,2}`)
 
 func IsEscaped(input []rune, pos int) bool {
 	if pos == 0 {

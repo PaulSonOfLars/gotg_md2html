@@ -201,11 +201,12 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nStart, nEnd := i+1, i+idx+1
 			followT, followB := cv.md2html(in[nEnd+len(item):], enableButtons)
 
-			if item == "`" {
+			switch item {
+			case "`":
 				// ` doesn't support nested items, so don't parse children.
 				return out.String() + "<code>" + string(in[nStart:nEnd]) + "</code>" + followT, followB
 
-			} else if item == "```" {
+			case "```":
 				// ``` doesn't support nested items, so don't parse children.
 				nestedT := string(in[nStart:nEnd])
 
