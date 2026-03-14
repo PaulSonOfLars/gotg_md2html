@@ -7,6 +7,7 @@ import (
 	"maps"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -114,6 +115,31 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 				} else {
 					out.WriteString(">" + strings.Join(strings.Split(nested, "\n"), "\n>"))
 				}
+			case "tg-time":
+				var unix, format string
+				for _, tag := range tagFields[1:] {
+					fieldType, valueQuoted, ok := strings.Cut(tag, "=")
+					if !ok {
+						return "", fmt.Errorf("badly formatted tag %q", tag)
+					}
+
+					value, err := strconv.Unquote(valueQuoted)
+					if err != nil {
+						return "", fmt.Errorf("badly formatted tag %q", tag)
+					}
+
+					switch fieldType {
+					case "unix":
+						unix = value
+					case "format":
+						format = value
+					}
+				}
+				if format != "" {
+					out.WriteString("![" + nested + "](tg://time?unix=" + unix + "&format=" + format + ")")
+				} else {
+					out.WriteString("![" + nested + "](tg://time?unix=" + unix + ")")
+				}
 
 			default:
 				return "", fmt.Errorf("unknown tag %q", tagType)
@@ -134,7 +160,7 @@ func (cv ConverterV2) reverse(in []rune, buttons []ButtonV2) (string, error) {
 	for idx, btn := range buttons {
 		bText, err := cv.ButtonToMarkdown(btn)
 		if err != nil {
-			return "", fmt.Errorf("failed to convert button %d (%s) to markdown: %w", idx, btn.Name, err)
+			return "", fmt.Errorf("invalid button %d (%s): %w", idx, btn.Name, err)
 		}
 		out.WriteString("\n" + bText)
 	}

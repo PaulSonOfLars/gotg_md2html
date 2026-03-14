@@ -30,6 +30,10 @@ func TestReverseV2(t *testing.T) {
 		"|||||spoiler|||",                         // uneven spoilers
 		"||<spoiler>||",                           // spoilers, but with HTML bits inside
 		"![👍](tg://emoji?id=5368324170671202286)", // premium emoji
+		"![22:45 tomorrow](tg://time?unix=1647531900&format=wDT)", // timestamps
+		"![22:45 tomorrow](tg://time?unix=1647531900&format=t)",   // timestamps
+		"![22:45 tomorrow](tg://time?unix=1647531900&format=r)",   // timestamps
+		"![22:45 tomorrow](tg://time?unix=1647531900)",            // timestamps
 		"> ",             // empty quotes
 		"test\n>\ntest",  // multiline quotes
 		"||||||||| test", // nested spoilers

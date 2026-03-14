@@ -2,6 +2,8 @@ package tg_md2html
 
 import (
 	"html"
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -102,7 +104,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			v[char] = append(v[char], pos-offset)
 			containedMDChars = append(containedMDChars, char)
 		case '\\':
-			if len(input) <= pos+1 || !contains(input[pos+1], allMdChars) {
+			if len(input) <= pos+1 || !slices.Contains(allMdChars, input[pos+1]) {
 				continue
 			}
 			escaped = true
@@ -192,9 +194,7 @@ func (cv *Converter) md2html(input []rune, buttons bool) (string, []Button) {
 			}
 			i = cnt // set i to copy
 
-			for x, y := range bkp {
-				v[x] = y
-			}
+			maps.Copy(v, bkp)
 
 		case '[':
 			nameOpen, rest := posArr[0], posArr[1:]
@@ -405,7 +405,7 @@ func (cv *Converter) stripHTML(r []rune) string {
 func EscapeMarkdown(r []rune, toEscape []rune) string {
 	out := strings.Builder{}
 	for i, x := range r {
-		if contains(x, toEscape) {
+		if slices.Contains(toEscape, x) {
 			if i == 0 || i == len(r)-1 || validEnd(i, r) || validStart(i, r) {
 				out.WriteRune('\\')
 			}

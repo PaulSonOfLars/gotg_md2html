@@ -18,7 +18,7 @@ func validStart(pos int, input []rune) bool {
 	}
 
 	// If the previous char is alphanumeric, it is an invalid start char.
-	return !(unicode.IsLetter(input[pos-1]) || unicode.IsDigit(input[pos-1]))
+	return !unicode.IsLetter(input[pos-1]) && !unicode.IsDigit(input[pos-1])
 }
 
 func validEnd(pos int, input []rune) bool {
@@ -34,17 +34,7 @@ func validEnd(pos int, input []rune) bool {
 	}
 
 	// If the next char is alphanumeric, it is an invalid end char.
-	return !(unicode.IsLetter(input[pos+1]) || unicode.IsDigit(input[pos+1]))
-}
-
-func contains(r rune, rr []rune) bool {
-	for _, x := range rr {
-		if r == x {
-			return true
-		}
-	}
-
-	return false
+	return !unicode.IsLetter(input[pos+1]) && !unicode.IsDigit(input[pos+1])
 }
 
 var link = regexp.MustCompile(`a href="(.*)"`)
