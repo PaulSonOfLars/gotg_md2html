@@ -1,12 +1,10 @@
 package tg_md2html
 
 import (
-	"fmt"
 	"html"
 	"net/url"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"unicode"
 )
