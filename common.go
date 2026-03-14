@@ -37,16 +37,6 @@ func validEnd(pos int, input []rune) bool {
 	return !unicode.IsLetter(input[pos+1]) && !unicode.IsDigit(input[pos+1])
 }
 
-func contains(r rune, rr []rune) bool {
-	for _, x := range rr {
-		if r == x {
-			return true
-		}
-	}
-
-	return false
-}
-
 var link = regexp.MustCompile(`a href="(.*)"`)
 var customEmoji = regexp.MustCompile(`tg-emoji emoji-id="(.*)"`)
 

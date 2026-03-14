@@ -3,6 +3,7 @@ package tg_md2html
 import (
 	"html"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -418,7 +419,7 @@ func validBlockQuoteStart(in []rune, i int) bool {
 func EscapeMarkdownV2(r []rune) string {
 	out := strings.Builder{}
 	for i, x := range r {
-		if contains(x, AllMarkdownV2Chars) {
+		if slices.Contains(AllMarkdownV2Chars, x) {
 			if i == 0 || i == len(r)-1 || validEnd(i, r) || validStart(i, r) {
 				out.WriteRune('\\')
 			}
