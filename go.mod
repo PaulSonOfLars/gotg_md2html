@@ -1,6 +1,6 @@
 module github.com/PaulSonOfLars/gotg_md2html
 
-go 1.19
+go 1.24
 
 require github.com/stretchr/testify v1.11.1
 

@@ -2,6 +2,8 @@ package tg_md2html
 
 import (
 	"html"
+	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -80,8 +82,8 @@ var chars = map[string]string{
 	"__":   "u",
 	"|":    "", // this is a placeholder for || to work
 	"||":   "span class=\"tg-spoiler\"",
-	"!":    "", // for emoji
-	"![":   "", // for emoji
+	"!":    "", // for emoji or datetime
+	"![":   "", // for emoji or datetime
 	"[":    "", // for links
 	"]":    "", // for links/emoji
 	"(":    "", // for links/emoji
@@ -200,11 +202,12 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			nStart, nEnd := i+1, i+idx+1
 			followT, followB := cv.md2html(in[nEnd+len(item):], enableButtons)
 
-			if item == "`" {
+			switch item {
+			case "`":
 				// ` doesn't support nested items, so don't parse children.
 				return out.String() + "<code>" + string(in[nStart:nEnd]) + "</code>" + followT, followB
 
-			} else if item == "```" {
+			case "```":
 				// ``` doesn't support nested items, so don't parse children.
 				nestedT := string(in[nStart:nEnd])
 
@@ -253,11 +256,47 @@ func (cv ConverterV2) md2html(in []rune, enableButtons bool) (string, []ButtonV2
 			}
 			end := i + newEnd
 
-			content = strings.TrimPrefix(content, "tg://emoji?id=")
+			contentType, content, ok := strings.Cut(strings.TrimPrefix(content, "tg://"), "?")
+			if !ok {
+				out.WriteString(item)
+				continue
+			}
+
+			queryForm, err := url.ParseQuery(html.UnescapeString(content))
+			if err != nil {
+				out.WriteString(item)
+				continue
+			}
 
 			nestedT, nestedB := cv.md2html(text, enableButtons)
 			followT, followB := cv.md2html(in[end:], enableButtons)
-			return out.String() + `<tg-emoji emoji-id="` + content + `">` + nestedT + "</tg-emoji>" + followT, append(nestedB, followB...)
+
+			switch contentType {
+			case "emoji":
+				// id=5368324170671202286
+				id := queryForm.Get("id")
+				if id == "" {
+					out.WriteString(item)
+					continue
+				}
+
+				return out.String() + `<tg-emoji emoji-id="` + id + `">` + nestedT + "</tg-emoji>" + followT, append(nestedB, followB...)
+			case "time":
+				// unix="1647531900" format="wDT"
+				unix := queryForm.Get("unix")
+				if unix == "" {
+					out.WriteString(item)
+					continue
+				}
+				format := queryForm.Get("format")
+				if format != "" {
+					return out.String() + `<tg-time unix="` + unix + `" format="` + format + `">` + nestedT + "</tg-time>" + followT, append(nestedB, followB...)
+				}
+				return out.String() + `<tg-time unix="` + unix + `">` + nestedT + "</tg-time>" + followT, append(nestedB, followB...)
+
+			default:
+				out.WriteString(item)
+			}
 
 		case "[":
 			ok, text, content, newEnd := getLinkContents(in[i:], false)
@@ -380,7 +419,7 @@ func validBlockQuoteStart(in []rune, i int) bool {
 func EscapeMarkdownV2(r []rune) string {
 	out := strings.Builder{}
 	for i, x := range r {
-		if contains(x, AllMarkdownV2Chars) {
+		if slices.Contains(AllMarkdownV2Chars, x) {
 			if i == 0 || i == len(r)-1 || validEnd(i, r) || validStart(i, r) {
 				out.WriteRune('\\')
 			}
