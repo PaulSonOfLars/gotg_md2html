@@ -31,6 +31,9 @@ var basicMDv2 = []struct {
 		in:  "```code\ncontent```",
 		out: "<pre><code class=\"language-code\">content</code></pre>",
 	}, {
+		in:  "```code\ncontent\n```",
+		out: "<pre><code class=\"language-code\">content\n</code></pre>",
+	}, {
 		in:  "```spaced words\ncontent```",
 		out: "<pre><code class=\"language-spaced words\">content</code></pre>",
 	}, {
