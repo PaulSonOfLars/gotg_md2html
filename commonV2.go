@@ -82,6 +82,13 @@ func getLinkContents(in []rune, emoji bool) (bool, []rune, string, int) {
 	return true, text, content, urlEndIdx + 1
 }
 
+func isCodeBlockNewlineEnd(in []rune, offset int, item string) bool {
+	if item != "```" {
+		return false
+	}
+	return offset == 0 || in[offset-1] == '\n'
+}
+
 func getValidEnd(in []rune, s string) int {
 	offset := 0
 	for offset < len(in) {
@@ -92,7 +99,7 @@ func getValidEnd(in []rune, s string) int {
 
 		end := offset + idx
 		// validEnd check has double logic to account for multi char strings
-		if validEnd(end, in) && validEnd(end+len(s)-1, in) && !IsEscaped(in, end) {
+		if (validEnd(end, in) || isCodeBlockNewlineEnd(in, end, s)) && validEnd(end+len(s)-1, in) && !IsEscaped(in, end) {
 			idx = stringIndex(in[end+1:], s)
 			for idx == 0 {
 				end++
